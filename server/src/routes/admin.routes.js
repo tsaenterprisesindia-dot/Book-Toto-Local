@@ -1,0 +1,113 @@
+import { Router } from 'express';
+import User from '../models/User.js';
+import Ride from '../models/Ride.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+
+export default function adminRoutes() {
+  const router = Router();
+  router.use(requireAuth, requireRole('admin'));
+
+  router.get('/stats', async (_req, res, next) => {
+    try {
+      const [riders, drivers, rides, online, completed] = await Promise.all([
+        User.countDocuments({ role: 'rider' }),
+        User.countDocuments({ role: 'driver' }),
+        Ride.countDocuments(),
+        User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved' }),
+        Ride.aggregate([
+          { $match: { status: 'completed', payment: { $ne: null } } },
+          {
+            $group: {
+              _id: null,
+              revenue: { $sum: '$fare' },
+              paid: { $sum: { $cond: [{ $eq: ['$payment.status', 'paid'] }, '$fare', 0] } },
+              avgFare: { $avg: '$fare' },
+            },
+          },
+        ]),
+      ]);
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const ridesToday = await Ride.countDocuments({ createdAt: { $gte: today } });
+
+      res.json({
+        stats: {
+          riders,
+          drivers,
+          rides,
+          ridesToday,
+          online,
+          revenue: completed[0]?.revenue || 0,
+          paid: completed[0]?.paid || 0,
+          avgFare: Math.round(completed[0]?.avgFare || 0),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/drivers', async (_req, res, next) => {
+    try {
+      const drivers = await User.find({ role: 'driver' })
+        .select('-password')
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const counts = await Ride.aggregate([
+        { $match: { driver: { $ne: null } } },
+        { $group: { _id: '$driver', total: { $sum: 1 } } },
+      ]);
+      const map = Object.fromEntries(counts.map((c) => [String(c._id), c.total]));
+
+      res.json({ drivers: drivers.map((d) => ({ ...d, rideCount: map[String(d._id)] || 0 })) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.patch('/drivers/:id', async (req, res, next) => {
+    try {
+      const { action } = req.body; // approve | block | unblock
+      const driver = await User.findById(req.params.id);
+      if (!driver || driver.role !== 'driver') {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+      if (action === 'approve') driver.driverStatus = 'approved';
+      else if (action === 'block') driver.driverStatus = 'blocked';
+      else if (action === 'unblock') driver.driverStatus = 'approved';
+      else return res.status(400).json({ message: 'Unknown action' });
+
+      if (driver.driverStatus !== 'approved') driver.isOnline = false;
+      await driver.save();
+      res.json({ driver: driver.toSafeJSON() });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/riders', async (_req, res, next) => {
+    try {
+      const riders = await User.find({ role: 'rider' }).select('-password').sort({ createdAt: -1 });
+      res.json({ riders });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/rides', async (_req, res, next) => {
+    try {
+      const rides = await Ride.find()
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .populate('rider', 'name email')
+        .populate('driver', 'name vehicleNumber');
+      res.json({ rides });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  return router;
+}
