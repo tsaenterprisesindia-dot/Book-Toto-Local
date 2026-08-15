@@ -47,6 +47,15 @@ export function AuthProvider({ children }) {
     [persist]
   );
 
+  const faceLogin = useCallback(
+    async (email, descriptor) => {
+      const { data } = await client.post('/auth/face-login', { email, descriptor });
+      persist(data);
+      return data;
+    },
+    [persist]
+  );
+
   const register = useCallback(
     async (payload) => {
       const { data } = await client.post('/auth/register', payload);
@@ -70,7 +79,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, faceLogin, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

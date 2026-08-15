@@ -143,6 +143,7 @@ export async function seedIfEmpty(mongoServer) {
   console.log('[seed]   rider:  rider@booktoto.local / demo123');
   console.log('[seed]   driver: driver@booktoto.local / demo123');
   console.log('[seed]   admin:  admin@booktoto.local / demo123');
+  console.log('[seed]   face login: log in with password, then enroll a face in Profile to enable Face Recognition');
   await mongoServer?.waitUntilReady?.();
 }
 

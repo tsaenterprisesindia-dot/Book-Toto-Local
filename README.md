@@ -1,11 +1,11 @@
 # 🛺 Book Toto Local
 
-A full-stack ride-hailing web app (like Ola / Uber / Rapido) for booking local totos & e-rickshaws — with rider booking, driver dispatch, live GPS tracking, admin dashboard and mock payments.
+A full-stack ride-hailing web app (like Ola / Uber / Rapido) for booking local totos & e-rickshaws — with rider booking, driver dispatch, live GPS tracking, admin dashboard, **Face Recognition login** for riders/drivers, and mock payments.
 
-Built with the **MERN** stack:
+MERN stack:
 
-- **Backend** — Node.js, Express, MongoDB (Mongoose), Socket.io (live tracking), JWT auth
-- **Frontend** — React 18, Vite, React Router, React Leaflet (OpenStreetMap), Axios, Socket.io client
+- **Backend** — Node.js, Express, MongoDB (Mongoose), Socket.io (live tracking), JWT auth. Face descriptors are matched server-side with L2 distance.
+- **Frontend** — React 18, Vite, React Router, React Leaflet (OpenStreetMap), Axios, Socket.io client. Face-recognition models (`face-api.js`) are loaded at runtime from a CDN, keeping the bundle small.
 
 ## Features
 
@@ -14,68 +14,86 @@ Built with the **MERN** stack:
 | 👤 Rider | Pick pickup/drop on map, live fare estimate, request a toto, track driver in real time, cancel, mock UPI payment, rate the driver, ride history |
 | 🛺 Driver | Online/offline toggle, receive ride requests with a 25s accept window, arrive → start → complete trip, rate the rider, earnings summary, simulated GPS |
 | 🛠️ Admin | Live stats (riders, drivers online, rides, revenue), approve / block driver accounts, view all rides & riders |
-| 🔌 Live | WebSocket streaming of driver location to rider; nearest-driver dispatch queue with timeout fallback |
+| 😀 Face Recognition login | Riders & drivers scan their face to log in. Admins always use password. Password is always a fallback. |
+| 🔌 Live tracking | WebSocket streaming of driver location; nearest-driver dispatch queue with timeout fallback |
 
 ## Quick start
 
 ```bash
-npm install
-npm run dev
+npm install       # installs server + client (npm workspaces)
+npm run dev       # starts API on :5000 and the Vite client on :5173
 ```
 
-Then open:
-
-- Rider app: **http://localhost:5173**
-- API: **http://localhost:5173/api** (proxied to `:5000`)
-
-`npm run dev` starts the API server (port 5000) and the Vite client (port 5173) together.
+Open **http://localhost:5173**. The Vite dev server proxies `/api` and `/socket.io` to the API.
 
 ## Demo accounts
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Rider | `rider@booktoto.local` | `demo123` |
-| Driver | `driver@booktoto.local` | `demo123` |
-| Admin | `admin@booktoto.local` | `demo123` |
+| Role | Email | Password | Face login |
+| --- | --- | --- | --- |
+| Rider | `rider@booktoto.local` | `demo123` | Register a face first (see below) |
+| Driver | `driver@booktoto.local` | `demo123` | Register a face first |
+| Admin | `admin@booktoto.local` | `demo123` | Password only (no face) |
 
-> Tip: open two browser windows — rider in one, driver in the other — and book a ride to watch the live dispatch and tracking.
+> Seeded accounts log in by **password** first. Then open **Profile → Register face** to enable Face Recognition login. After that you can use the **Face recognition** tab on the login screen.
 
-## Live demo walkthrough
+## Face Recognition login — how it works
 
-1. Log in as **driver** → keep the driver window open, make sure it is **online**.
-2. Log in as **rider** → pick a pickup & drop, see the fare estimate, tap **Request toto**.
-3. The driver window receives a request modal → tap **Accept**.
-4. The rider sees the toto 🛺 approach on the map (driver GPS is simulated so it works anywhere).
+1. At enrollment the browser loads `face-api.js` + models (~7 MB, cached) and uses your **webcam** to detect a face and compute a 128-dimension **face descriptor**.
+2. The descriptor is sent to the server **once** and stored on your user document. **Your photo / image never leaves your device** — only the numeric descriptor is persisted.
+3. At login, a fresh selfie descriptor is compared to the stored one using **Euclidean distance on L2-normalized descriptors**. `FACE_MATCH_THRESHOLD` (default `0.6`, max match distance) decides acceptance. Genuine matches score low; non-matches are rejected.
+4. If anything fails (camera blocked, no face detected, poor match), you always fall back to **password** login.
+5. **Admins are never enrolled** — `/api/auth/face-login` returns 403 for admin accounts.
+
+### Routes
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/api/auth/register` | public | Register (rider/driver/admin) |
+| POST | `/api/auth/login` | public | Password login (everyone) |
+| POST | `/api/auth/face-login` | public | Face login — riders/drivers only, admins blocked |
+| POST | `/api/face/register` | auth (rider/driver) | Store your face descriptor |
+| POST | `/api/face/verify` | auth (rider/driver) | Verify a selfie descriptor against your stored face |
+
+## Live ride demo walkthrough
+
+1. Log in as **driver** → go online (an admin must approve the account first; the seeded `driver@…` is approved).
+2. Log in as **rider** → set pickup & drop, see the fare estimate, tap **Request toto**.
+3. The driver receives a request modal → tap **Accept**.
+4. The rider sees the toto 🛺 approach live on the map (driver GPS is simulated in the demo).
 5. Driver: **arrived → start trip → complete trip**.
 6. Rider: **Pay** (mock UPI) → **rate the driver**.
 
 ## Data storage
 
-- By default the app uses **MongoDB in-memory** (`mongodb-memory-server`), so it runs with zero setup — but data resets every restart. Seed data is created automatically on first boot.
-- To use a persistent database, create `server/.env`:
+- By default the app uses **MongoDB in-memory** (`mongodb-memory-server`), so it runs with zero setup. Data resets on each restart, and demo data is auto-seeded on first boot.
+- For a persistent DB, copy `server/.env.example` → `server/.env` and set `MONGODB_URI` (Atlas/local). `npm run seed` force-seeds demo data into an empty DB.
 
-```
-MONGODB_URI=mongodb+srv://<user>:<pass>@<cluster>/booktoto
-JWT_SECRET=change-me
-```
+## Configuration (`server/.env.example`)
 
-Then re-run `npm run dev` (or `npm run seed` to force-seed demo data into an empty DB).
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `MONGODB_URI` | (in-memory) | Persistent MongoDB connection (Atlas/local) |
+| `JWT_SECRET` | `book-toto-dev-secret` | JWT signing secret |
+| `FACE_MATCH_THRESHOLD` | `0.6` | Max L2 distance to accept a face match |
+| `PORT` | `5000` | API port |
 
 ## Project structure
 
 ```
 server/src
-  config/db.js        MongoDB connection (memory or MONGODB_URI)
-  models/             User, Ride
-  middleware/         JWT auth + roles, error handling
-  routes/             auth, rides, driver, admin
-  socket.js           live tracking, ride dispatch queue
-  seed.js             demo users & rides
+  config/db.js            MongoDB (memory or MONGODB_URI)
+  models/                 User (faceDescriptor / faceRegistered), Ride
+  middleware/             JWT auth + roles, error handling
+  routes/                 auth (login / face-login / me), face (register/verify),
+                          rides, driver, admin
+  socket.js               live tracking, ride dispatch queue
+  utils/pricing.js        fare model + face matching helpers
+  seed.js                 demo users & rides
 client/src
-  api/client.js       Axios instance (JWT header, 401 redirect)
-  context/            AuthContext, SocketContext
-  components/         MapView (Leaflet), RideTracker, Nav, Modal
-  pages/              Landing, Login, Register, RiderHome, DriverHome, AdminDashboard, RideHistory, Profile
+  context/                AuthContext, SocketContext, FaceProvider (loads face-api.js + models)
+  components/             MapView, RideTracker, Nav, Modal, FaceCapture (webcam modal)
+  pages/                  Landing, Login (password + face tabs), Register, RiderHome,
+                          DriverHome, AdminDashboard, RideHistory, Profile
 ```
 
 ## Useful scripts
@@ -94,6 +112,6 @@ client/src
 
 ## Notes
 
-- **Driver GPS** is simulated in the demo (a small random walk / route-following), so you can try the full flow without real device sensors. A real driver app would stream browser `navigator.geolocation` instead — the socket event (`driver:location`) is identical.
-- **Payments** are mocked end-to-end (no real money).
-- Map tiles come from OpenStreetMap (free, no API key needed).
+- **Driver GPS** is simulated in the demo so the full flow works anywhere. A real driver app would stream `navigator.geolocation` (the `driver:location` socket event is identical).
+- **Payments** are mocked end-to-end.
+- **Face login** needs camera permission. If the browser blocks it, password login always works.

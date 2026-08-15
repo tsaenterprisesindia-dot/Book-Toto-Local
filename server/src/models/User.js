@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema(
       default: 'rider',
     },
 
+    // Face recognition login (rider/driver only)
+    faceDescriptor: { type: [Number], default: [] },
+    faceRegistered: { type: Boolean, default: false },
+
     // Driver profile
     vehicleType: { type: String, default: 'Toto (E-Rickshaw)' },
     vehicleNumber: { type: String, default: '' },

@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useFace } from '../context/FaceProvider.jsx';
+import FaceCapture from '../components/FaceCapture.jsx';
+import client from '../api/client.js';
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, refreshUser } = useAuth();
+  const face = useFace();
   const navigate = useNavigate();
+
   const [role, setRole] = useState('rider');
   const [form, setForm] = useState({
     name: '',
@@ -15,23 +20,47 @@ export default function Register() {
     vehicleNumber: '',
   });
   const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [faceOpen, setFaceOpen] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollDone, setEnrollDone] = useState(false);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const submit = async (e) => {
     e.preventDefault();
-    setBusy(true);
     setErr('');
     try {
       const { user } = await register({ ...form, role });
-      navigate(user.role === 'driver' ? '/driver' : '/ride');
+      // Auto-enroll a face for driver/rider so face login is usable right away.
+      if (user.role !== 'admin') setFaceOpen(true);
+      else navigate('/ride');
     } catch (err) {
       setErr(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setBusy(false);
     }
   };
+
+  const enrollFace = async () => {
+    setErr('');
+    setEnrolling(true);
+    const res = await face.captureDescriptor();
+    face.stopStream();
+    if (!res.ok) {
+      setErr(res.message);
+      setEnrolling(false);
+      return;
+    }
+    try {
+      await client.post('/face/register', { descriptor: res.descriptor });
+      setEnrollDone(true);
+      await refreshUser();
+    } catch (e) {
+      setErr(e.response?.data?.message || 'Could not save face');
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const canEnroll = face.ready && role !== 'admin';
 
   return (
     <div className="auth-page">
@@ -44,19 +73,12 @@ export default function Register() {
         {err && <div className="err-box">{err}</div>}
 
         <div className="tab-row">
-          <button className={`tab${role === 'rider' ? ' active' : ''}`} onClick={() => setRole('rider')}>
-            I ride
-          </button>
-          <button className={`tab${role === 'driver' ? ' active' : ''}`} onClick={() => setRole('driver')}>
-            I drive a toto
-          </button>
+          <button className={`tab${role === 'rider' ? ' active' : ''}`} onClick={() => setRole('rider')}>I ride</button>
+          <button className={`tab${role === 'driver' ? ' active' : ''}`} onClick={() => setRole('driver')}>I drive a toto</button>
         </div>
 
         {role === 'driver' && (
-          <p className="hint">
-            Driver accounts need admin approval before going online. A pending account will be listed
-            on the admin dashboard.
-          </p>
+          <p className="hint">Driver accounts need admin approval to go online (the seeded driver already works).</p>
         )}
 
         <form onSubmit={submit}>
@@ -94,15 +116,50 @@ export default function Register() {
             </>
           )}
 
-          <button className="btn btn-primary btn-block btn-lg" disabled={busy}>
-            {busy ? 'Creating account…' : role === 'driver' ? 'Register as driver' : 'Create rider account'}
+          <button className="btn btn-primary btn-block btn-lg" type="submit">
+            Create account
           </button>
         </form>
+
+        {canEnroll ? (
+          <div className="mt">
+            <div className="row">
+              <span className="chip">Face login</span>
+              <span className={`badge ${enrollDone ? 'badge-green' : face.faceRegistered ? 'badge-green' : 'badge-gray'}`}>
+                {enrollDone || face.faceRegistered ? 'enrolled' : 'not enrolled'}
+              </span>
+            </div>
+            <p className="small muted">
+              Register your face to log in with Face Recognition instead of a password (optional).
+            </p>
+            <button className="btn btn-ghost btn-block" onClick={() => setFaceOpen(true)} disabled={enrolling} type="button">
+              {enrollDone || face.faceRegistered ? 'Re-register face' : 'Register my face'}
+            </button>
+            <p className="small muted">
+              Your photo stays on this device. Only the face descriptor is stored for later login.
+            </p>
+          </div>
+        ) : (
+          <p className="small muted mt">Face login is available for rider/driver accounts after registration.</p>
+        )}
 
         <div className="small muted mt" style={{ textAlign: 'center' }}>
           Already have an account? <Link to="/login">Log in</Link>
         </div>
       </div>
+
+      <FaceCapture
+        open={faceOpen}
+        onClose={() => {
+          setFaceOpen(false);
+          face.stopStream();
+        }}
+        videoRef={face.videoRef}
+        startCamera={face.startCamera}
+        onCapture={enrollFace}
+        loading={enrolling}
+        title="Register your face"
+      />
     </div>
   );
 }

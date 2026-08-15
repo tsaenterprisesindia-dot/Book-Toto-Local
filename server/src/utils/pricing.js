@@ -9,6 +9,34 @@ export const PRICING = {
   surgeCeil: 1.6,
 };
 
+// ---- Face recognition helpers ----
+// face-api.js descriptors are 128-dim. We L2-normalize defensively (the model
+// already returns unit vectors) and verify using Euclidean distance, the
+// canonical metric for face-api.js. FACE_MATCH_THRESHOLD is the max distance
+// to accept as a genuine match (default 0.6).
+export function normalize(vec = []) {
+  const len = Math.sqrt(vec.reduce((s, x) => s + x * x, 0)) || 1;
+  return vec.map((x) => x / len);
+}
+
+export function faceDistance(a = [], b = []) {
+  if (!a || !b || a.length !== b.length || a.length === 0) return Infinity;
+  const na = normalize(a);
+  const nb = normalize(b);
+  let sum = 0;
+  for (let i = 0; i < na.length; i++) sum += (na[i] - nb[i]) ** 2;
+  return Math.sqrt(sum);
+}
+
+export function FACE_THRESHOLD() {
+  return Number(process.env.FACE_MATCH_THRESHOLD || 0.6);
+}
+
+export function faceMatch(stored, probe) {
+  const distance = faceDistance(stored, probe);
+  return { distance, matched: distance <= FACE_THRESHOLD() };
+}
+
 export function toRad(deg) {
   return (deg * Math.PI) / 180;
 }
