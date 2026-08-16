@@ -366,3 +366,31 @@ tr:hover td { background: #fafbfd; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .leaflet-container { font-family: inherit; background: #e8eef5; }
 .leaflet-popup-content-wrapper { border-radius: 12px; }
+
+/* ---------- Mobile (phones) ---------- */
+@media (max-width: 640px) {
+  body { overflow-x: hidden; }
+
+  .nav {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 60px;
+    padding: 8px 14px;
+    gap: 6px;
+    row-gap: 6px;
+  }
+  .nav .brand-unit { display: none; }
+  .nav-links { flex-wrap: wrap; gap: 2px; width: 100%; }
+  .nav-link { padding: 6px 9px; font-size: 13px; }
+  .nav .user-chip { margin-left: 0; }
+  .nav .user-chip .small { display: none; }
+  .logout-btn { padding: 6px 10px; font-size: 12.5px; }
+
+  .page { padding: 16px 12px; max-width: 100%; }
+  .hero { padding: 40px 16px 24px; }
+  .hero h1 { font-size: 30px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .map-col, .map-fill { min-height: 300px; }
+  .auth-card { padding: 20px 16px; }
+}
+

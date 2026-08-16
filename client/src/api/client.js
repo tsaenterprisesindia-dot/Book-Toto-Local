@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { apiBase } from './config.js';
 
-const client = axios.create({ baseURL: '/api' });
+const client = axios.create({ baseURL: `${apiBase()}/api` });
 
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('btl_token');

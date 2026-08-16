@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Book Toto Local</string>
+    <string name="title_activity_main">Book Toto Local</string>
+    <string name="package_name">in.tsa.booktotolocal</string>
+    <string name="custom_url_scheme">in.tsa.booktotolocal</string>
+</resources>
