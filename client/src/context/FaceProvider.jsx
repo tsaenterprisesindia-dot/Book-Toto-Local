@@ -48,14 +48,13 @@ export function FaceProvider({ children }) {
   };
 
   useEffect(() => {
-    // Only load the face engine for non-admin users.
-    if (user && user.role !== 'admin') {
-      loadFaceApi();
-    }
+    // Load the face engine up front so the standalone /face-login page works
+    // even before the user is authenticated.
+    loadFaceApi();
     return () => {
       stopStream();
     };
-  }, [user?.id]);
+  }, []);
 
   const startCamera = async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
