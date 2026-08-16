@@ -55,12 +55,12 @@ export function haversineKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-export function estimate(distanceKm) {
-  const durationMin = (distanceKm / PRICING.avgSpeedKmh) * 60;
+export function estimate(distanceKm, cfg = PRICING) {
+  const durationMin = (distanceKm / cfg.avgSpeedKmh) * 60;
   return { distanceKm, durationMin: Math.max(2, Math.round(durationMin)) };
 }
 
-export function computeSurge(activeRequests, onlineDrivers) {
+export function computeSurge(activeRequests, onlineDrivers, cfg = PRICING) {
   const online = Math.max(onlineDrivers, 1);
   const ratio = activeRequests / online;
   // No surge while supply comfortably covers demand (ratio <= 0.6).
@@ -68,19 +68,19 @@ export function computeSurge(activeRequests, onlineDrivers) {
   const surge =
     ratio <= 0.6
       ? 1.0
-      : Math.min(PRICING.surgeCeil, 1 + (ratio - 0.6) * 0.5);
+      : Math.min(cfg.surgeCeil, 1 + (ratio - 0.6) * 0.5);
   return Math.round(surge * 100) / 100;
 }
 
-export function computeFare(distanceKm, durationMin, surge = 1) {
-  const base = PRICING.base;
-  const distance = Math.round(distanceKm * PRICING.perKm);
-  const time = Math.round(durationMin * PRICING.perMin);
+export function computeFare(distanceKm, durationMin, surge = 1, cfg = PRICING) {
+  const base = cfg.base;
+  const distance = Math.round(distanceKm * cfg.perKm);
+  const time = Math.round(durationMin * cfg.perMin);
   const raw = base + distance + time;
-  const subtotal = Math.max(raw, PRICING.minimum); // fare before surge & tax
+  const subtotal = Math.max(raw, cfg.minimum); // fare before surge & tax
   const gross = Math.round(subtotal * surge); // what the fare earns pre-tax
-  const gst = Math.round(gross * PRICING.gstRate); // 5% GST paid by the rider
-  const commission = Math.round(gross * PRICING.commissionRate); // platform cut
+  const gst = Math.round(gross * cfg.gstRate); // GST paid by the rider
+  const commission = Math.round(gross * cfg.commissionRate); // platform cut
   const driverEarnings = gross - commission; // what the driver keeps
   const total = gross + gst; // what the rider is charged (incl. GST)
   return {

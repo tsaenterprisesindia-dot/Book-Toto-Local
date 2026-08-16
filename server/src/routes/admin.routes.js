@@ -2,6 +2,8 @@ import { Router } from 'express';
 import User from '../models/User.js';
 import Ride from '../models/Ride.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { getPricingConfig, savePricingConfig } from '../services/settings.js';
+import { PRICING } from '../utils/pricing.js';
 
 export default function adminRoutes() {
   const router = Router();
@@ -177,6 +179,24 @@ export default function adminRoutes() {
         .populate('rider', 'name email')
         .populate('driver', 'name vehicleNumber');
       res.json({ rides });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Admin-editable pricing configuration (admin only, enforced by the router guard).
+  router.get('/settings', async (_req, res, next) => {
+    try {
+      res.json({ settings: await getPricingConfig(), defaults: { ...PRICING } });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.put('/settings', async (req, res, next) => {
+    try {
+      const settings = await savePricingConfig(req.body);
+      res.json({ settings, message: 'Pricing settings updated' });
     } catch (err) {
       next(err);
     }

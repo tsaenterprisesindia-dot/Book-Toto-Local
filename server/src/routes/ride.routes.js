@@ -8,8 +8,8 @@ import {
   estimate,
   computeFare,
   computeSurge,
-  PRICING,
 } from '../utils/pricing.js';
+import { getPricingConfig } from '../services/settings.js';
 import {
   dispatchRideRequest,
   emitRideUpdate,
@@ -43,10 +43,11 @@ export default function rideRoutes(io) {
         return res.status(400).json({ message: 'Pickup and drop locations are required' });
       }
       const distanceKm = haversineKm(pickup, drop);
-      const { durationMin } = estimate(distanceKm);
       const { activeRequests, onlineDrivers } = await surgeContext();
-      const surge = computeSurge(activeRequests, onlineDrivers);
-      const fare = computeFare(distanceKm, durationMin, surge);
+      const cfg = await getPricingConfig();
+      const { durationMin } = estimate(distanceKm, cfg);
+      const surge = computeSurge(activeRequests, onlineDrivers, cfg);
+      const fare = computeFare(distanceKm, durationMin, surge, cfg);
       res.json({
         distanceKm: +distanceKm.toFixed(2),
         durationMin,
@@ -76,10 +77,11 @@ export default function rideRoutes(io) {
       }
 
       const distanceKm = haversineKm(pickup, drop);
-      const { durationMin } = estimate(distanceKm);
       const { activeRequests, onlineDrivers } = await surgeContext();
-      const surge = computeSurge(activeRequests, onlineDrivers);
-      const fare = computeFare(distanceKm, durationMin, surge);
+      const cfg = await getPricingConfig();
+      const { durationMin } = estimate(distanceKm, cfg);
+      const surge = computeSurge(activeRequests, onlineDrivers, cfg);
+      const fare = computeFare(distanceKm, durationMin, surge, cfg);
 
       const ride = await Ride.create({
         rider: req.user.id,
@@ -153,8 +155,9 @@ export default function rideRoutes(io) {
       ride.cancelledAt = new Date();
       // The rider is charged a cancellation fee only once a driver has accepted.
       if (ride.driver) {
-        ride.cancellationFee = PRICING.cancellationFee;
-        ride.payment.amount = PRICING.cancellationFee;
+        const cfg = await getPricingConfig();
+        ride.cancellationFee = cfg.cancellationFee;
+        ride.payment.amount = cfg.cancellationFee;
         await User.findByIdAndUpdate(ride.driver, { currentRide: null, isOnline: true });
       }
       await ride.save();

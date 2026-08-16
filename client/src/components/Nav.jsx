@@ -40,7 +40,7 @@ export default function Nav() {
         )}
         {user?.role === 'admin' && (
           <NavLink to="/admin" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
-            Dashboard
+            Admin console
           </NavLink>
         )}
         <NavLink to="/profile" className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>

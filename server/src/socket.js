@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 import User from './models/User.js';
 import Ride from './models/Ride.js';
-import { haversineKm, PRICING } from './utils/pricing.js';
+import { haversineKm } from './utils/pricing.js';
+import { getPricingConfig } from './services/settings.js';
 
 const RIDE_REQUEST_TIMEOUT_MS = 25000;
 const dispatchTimers = new Map();
@@ -69,9 +70,10 @@ export async function dispatchRideRequest(io, rideId) {
     'location.lat': { $ne: null },
   });
 
+  const cfg = await getPricingConfig();
   const near = candidates
     .map((d) => ({ d, dist: haversineKm(ride.pickup, d.location) }))
-    .filter((x) => x.dist <= PRICING.searchRadiusKm)
+    .filter((x) => x.dist <= cfg.searchRadiusKm)
     .sort((a, b) => a.dist - b.dist);
 
   ride.pendingDrivers = near.map((x) => x.d._id);

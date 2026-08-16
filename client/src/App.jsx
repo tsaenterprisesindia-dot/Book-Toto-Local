@@ -7,9 +7,15 @@ import Register from './pages/Register.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
 import RiderHome from './pages/RiderHome.jsx';
 import DriverHome from './pages/DriverHome.jsx';
-import AdminDashboard from './pages/AdminDashboard.jsx';
 import RideHistory from './pages/RideHistory.jsx';
 import Profile from './pages/Profile.jsx';
+import AdminLayout from './layouts/AdminLayout.jsx';
+import AdminOverview from './pages/admin/AdminOverview.jsx';
+import AdminDrivers from './pages/admin/AdminDrivers.jsx';
+import AdminRiders from './pages/admin/AdminRiders.jsx';
+import AdminRides from './pages/admin/AdminRides.jsx';
+import AdminReports from './pages/admin/AdminReports.jsx';
+import AdminSettings from './pages/admin/AdminSettings.jsx';
 
 function Protected({ children, roles }) {
   const { user, loading } = useAuth();
@@ -58,10 +64,17 @@ export default function App() {
         path="/admin"
         element={
           <Protected roles={['admin']}>
-            <AdminDashboard />
+            <AdminLayout />
           </Protected>
         }
-      />
+      >
+        <Route index element={<AdminOverview />} />
+        <Route path="drivers" element={<AdminDrivers />} />
+        <Route path="riders" element={<AdminRiders />} />
+        <Route path="rides" element={<AdminRides />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="settings" element={<AdminSettings />} />
+      </Route>
       <Route
         path="/profile"
         element={
