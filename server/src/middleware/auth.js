@@ -23,6 +23,18 @@ export async function requireAuth(req, res, next) {
     if (user.isHidden) {
       return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
     }
+    // Auto-expire time-limited suspensions.
+    if (user.suspension?.active && user.suspension.until && user.suspension.until <= new Date()) {
+      user.suspension.active = false;
+      await user.save();
+    }
+    if (user.suspension?.active) {
+      const until = user.suspension.until;
+      const when = until ? ` until ${until.toLocaleDateString('en-IN')}` : '';
+      return res.status(403).json({
+        message: `Service suspended${when}: ${user.suspension.reason || 'violations of terms'}`,
+      });
+    }
     req.userDoc = user;
     return next();
   } catch {

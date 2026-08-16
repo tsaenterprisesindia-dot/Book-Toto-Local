@@ -26,6 +26,7 @@ async function surgeContext() {
       driverStatus: 'approved',
       isOnline: true,
       isHidden: false,
+      'suspension.active': { $ne: true },
       currentRide: null,
       'location.lat': { $ne: null },
     }),

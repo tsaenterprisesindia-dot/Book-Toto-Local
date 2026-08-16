@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import client from '../api/client.js';
 import Nav from '../components/Nav.jsx';
+import WarningBanner from '../components/WarningBanner.jsx';
 import MapView from '../components/MapView.jsx';
 import RideTracker from '../components/RideTracker.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
@@ -109,6 +110,7 @@ export default function RiderHome() {
     <>
       <Nav />
       <div className="page">
+        <WarningBanner />
         {ride ? (
           <RideTracker
             ride={ride}

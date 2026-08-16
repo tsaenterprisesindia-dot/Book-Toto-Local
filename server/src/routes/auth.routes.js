@@ -105,6 +105,9 @@ export default function authRoutes() {
         if (user.isHidden) {
           return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
         }
+        if (user.suspension?.active && (!user.suspension.until || user.suspension.until > new Date())) {
+          return res.status(403).json({ message: 'This account is currently suspended. Contact the admin.' });
+        }
       }
 
       const demoOtp = await createOtp(phone, purpose);
@@ -133,6 +136,18 @@ export default function authRoutes() {
       if (user.isHidden) {
         return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
       }
+      if (user.suspension?.active) {
+        if (user.suspension.until && user.suspension.until <= new Date()) {
+          user.suspension.active = false; await user.save();
+        } else {
+          const until = user.suspension.until;
+          return res.status(403).json({
+            message: until
+              ? `Service suspended until ${until.toLocaleDateString('en-IN')}: ${user.suspension.reason || 'violations of terms'}`
+              : `Service permanently suspended: ${user.suspension.reason || 'violations of terms'}`,
+          });
+        }
+      }
       const token = signToken(user);
       res.json({ token, user: user.toSafeJSON() });
     } catch (err) {
@@ -149,6 +164,18 @@ export default function authRoutes() {
       }
       if (user.isHidden) {
         return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+      }
+      if (user.suspension?.active) {
+        if (user.suspension.until && user.suspension.until <= new Date()) {
+          user.suspension.active = false; await user.save();
+        } else {
+          const until = user.suspension.until;
+          return res.status(403).json({
+            message: until
+              ? `Service suspended until ${until.toLocaleDateString('en-IN')}: ${user.suspension.reason || 'violations of terms'}`
+              : `Service permanently suspended: ${user.suspension.reason || 'violations of terms'}`,
+          });
+        }
       }
       // Admins must solve a captcha before signing in.
       if (user.role === 'admin' && !verifyCaptcha(captchaId, captchaAnswer)) {
@@ -250,6 +277,21 @@ export default function authRoutes() {
       await user.save();
 
       res.json({ message: 'Password updated. You can now log in with your new password.' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Accept Terms & Conditions (requires auth, sets termsAcceptedAt on the user).
+  router.post('/accept-terms', requireAuth, async (req, res) => {
+    try {
+      const { version } = req.body || {};
+      if (!version) return res.status(400).json({ message: 'Terms version is required' });
+      const user = req.userDoc;
+      user.termsAcceptedAt = new Date();
+      user.termsVersion = String(version);
+      await user.save();
+      res.json({ message: 'Terms accepted', user: user.toSafeJSON() });
     } catch (err) {
       next(err);
     }

@@ -9,6 +9,8 @@ import RiderHome from './pages/RiderHome.jsx';
 import DriverHome from './pages/DriverHome.jsx';
 import RideHistory from './pages/RideHistory.jsx';
 import Profile from './pages/Profile.jsx';
+import RiderTerms from './pages/RiderTerms.jsx';
+import DriverTerms from './pages/DriverTerms.jsx';
 import AdminLayout from './layouts/AdminLayout.jsx';
 import AdminOverview from './pages/admin/AdminOverview.jsx';
 import AdminDrivers from './pages/admin/AdminDrivers.jsx';
@@ -24,6 +26,13 @@ function Protected({ children, roles }) {
   if (roles && !roles.includes(user.role)) {
     return <Navigate to={user.role === 'driver' ? '/driver' : user.role === 'admin' ? '/admin' : '/'} replace />;
   }
+  // Terms gate: non-admin users must accept T&C before accessing main features.
+  if (user.role !== 'admin' && !user.termsAcceptedAt) {
+    const termsPath = user.role === 'driver' ? '/terms/driver' : '/terms/rider';
+    // Already on the terms page? Allow it.
+    if (typeof window !== 'undefined' && window.location.pathname === termsPath) return children;
+    return <Navigate to={termsPath} replace />;
+  }
   return children;
 }
 
@@ -36,6 +45,22 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register" element={<Register />} />
 
+      <Route
+        path="/terms/rider"
+        element={
+          <Protected roles={['rider']}>
+            <RiderTerms />
+          </Protected>
+        }
+      />
+      <Route
+        path="/terms/driver"
+        element={
+          <Protected roles={['driver']}>
+            <DriverTerms />
+          </Protected>
+        }
+      />
       <Route
         path="/ride"
         element={

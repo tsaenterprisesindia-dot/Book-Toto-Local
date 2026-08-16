@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import client from '../api/client.js';
 import Nav from '../components/Nav.jsx';
+import WarningBanner from '../components/WarningBanner.jsx';
 import Modal from '../components/Modal.jsx';
 import RideTracker from '../components/RideTracker.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -156,6 +157,7 @@ export default function DriverHome() {
     <>
       <Nav />
       <div className="page">
+        <WarningBanner />
         {err && <div className="alert alert-warn mb">{err}</div>}
 
         {notApproved ? (

@@ -48,12 +48,35 @@ const userSchema = new mongoose.Schema(
     earnings: { type: Number, default: 0 },
     totalRides: { type: Number, default: 0 },
     currentRide: { type: mongoose.Schema.Types.ObjectId, ref: 'Ride', default: null },
+
+    // Terms & Conditions
+    termsAcceptedAt: { type: Date, default: null },
+    termsVersion: { type: String, default: '' },
+
+    // Warnings issued by admin (visible to the user as in-app banners)
+    warnings: [
+      {
+        message: String,
+        issuedAt: { type: Date, default: Date.now },
+        issuedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      },
+    ],
+
+    // Suspension: time-limited or permanent ban until admin reinstates.
+    suspension: {
+      active: { type: Boolean, default: false },
+      until: { type: Date, default: null }, // null = permanent
+      reason: { type: String, default: '' },
+      issuedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      issuedAt: { type: Date, default: null },
+    },
   },
   { timestamps: true }
 );
 
 userSchema.methods.toSafeJSON = function toSafeJSON() {
   const obj = this.toObject();
+  obj.id = obj._id; // ensure id is available (some clients expect it)
   delete obj.password; // never expose the password hash
   delete obj.resetCode; // password-reset codes are secrets too
   delete obj.resetExpires;

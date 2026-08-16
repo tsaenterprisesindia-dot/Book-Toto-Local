@@ -504,6 +504,74 @@ tr:hover td { background: #fafbfd; }
 .otp-timer.warn { color: var(--danger); }
 .otp-expired { font-weight: 700; font-size: 13px; color: var(--danger); }
 
+/* ---------- Terms & Conditions ------------------------------------------- */
+.terms-card { max-height: 92vh; display: flex; flex-direction: column; }
+.terms-box {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  max-height: 55vh;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  background: var(--bg);
+  margin-bottom: 8px;
+  scroll-behavior: smooth;
+}
+.terms-heading { margin: 0 0 6px; font-size: 14px; font-weight: 700; color: var(--text); }
+.terms-box p { margin: 0 0 8px; line-height: 1.55; }
 
+/* ---------- Warning banner ---------------------------------------------- */
+.warning-banner {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.warning-banner .warning-title { font-weight: 700; color: #92400e; margin-bottom: 4px; font-size: 13px; }
+.warning-banner .warning-msg { font-size: 12px; color: #78350f; line-height: 1.45; }
+.warning-banner + .warning-banner { margin-top: -6px; }
+
+.warning-banner.severe {
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+.warning-banner.severe .warning-title { color: #991b1b; }
+.warning-banner.severe .warning-msg { color: #7f1d1d; }
+
+/* ---------- Modal ------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+}
+.modal-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  width: 92%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+.modal-box h3 { margin: 0 0 12px; font-size: 16px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+/* ---------- Suspension page (403) --------------------------------------- */
+.suspended-page {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 80vh; text-align: center; padding: 24px;
+}
+.suspended-page .icon { font-size: 48px; margin-bottom: 12px; }
+.suspended-page h2 { margin: 0 0 8px; font-size: 20px; }
+.suspended-page p { max-width: 360px; line-height: 1.5; color: var(--muted); font-size: 14px; }
+
+/* ---------- Badges (warnings / suspension) ------------------------------ */
+.badge-suspended { background: #fee2e2; color: #991b1b; }
+.badge-warned   { background: #fef3c7; color: #92400e; }
+.badge-active   { background: var(--brand-light); color: var(--brand-dark); }
 
 
