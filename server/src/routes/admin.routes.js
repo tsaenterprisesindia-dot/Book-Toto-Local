@@ -122,7 +122,7 @@ export default function adminRoutes() {
   router.get('/drivers', async (_req, res, next) => {
     try {
       const drivers = await User.find({ role: 'driver' })
-        .select('-password')
+        .select('-password -resetCode -resetExpires -faceDescriptor')
         .sort({ createdAt: -1 })
         .lean();
 
@@ -160,7 +160,9 @@ export default function adminRoutes() {
 
   router.get('/riders', async (_req, res, next) => {
     try {
-      const riders = await User.find({ role: 'rider' }).select('-password').sort({ createdAt: -1 });
+      const riders = await User.find({ role: 'rider' })
+        .select('-password -resetCode -resetExpires -faceDescriptor')
+        .sort({ createdAt: -1 });
       res.json({ riders });
     } catch (err) {
       next(err);

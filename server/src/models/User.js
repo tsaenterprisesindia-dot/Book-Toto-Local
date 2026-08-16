@@ -50,7 +50,10 @@ const userSchema = new mongoose.Schema(
 
 userSchema.methods.toSafeJSON = function toSafeJSON() {
   const obj = this.toObject();
-  delete obj.password;
+  delete obj.password; // never expose the password hash
+  delete obj.resetCode; // password-reset codes are secrets too
+  delete obj.resetExpires;
+  delete obj.faceDescriptor; // biometric data never leaves the server
   return obj;
 };
 
