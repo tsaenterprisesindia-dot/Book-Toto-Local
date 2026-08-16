@@ -5,7 +5,7 @@ import { useFace } from '../context/FaceProvider.jsx';
 import FaceCapture from '../components/FaceCapture.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 import client from '../api/client.js';
-import logo from '../assets/book-toto-logo.png';
+import logo from '../assets/super-toto-logo.png';
 
 export default function Register() {
   const { register, refreshUser } = useAuth();
@@ -68,9 +68,9 @@ export default function Register() {
     <div className="auth-page">
       <div className="card auth-card fade-in">
         <div className="auth-title">
-          <img src={logo} alt="Book Toto Local logo" className="auth-logo" /> Create account
+          <img src={logo} alt="Super Toto Local logo" className="auth-logo" /> Create account
         </div>
-        <p className="muted">Join Book Toto Local</p>
+        <p className="muted">Join Super Toto Local</p>
 
         {err && <div className="err-box">{err}</div>}
 

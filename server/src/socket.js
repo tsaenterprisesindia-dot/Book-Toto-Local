@@ -84,7 +84,7 @@ export function setupSocket(io) {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Not authenticated'));
     try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET || 'book-toto-dev-secret');
+      const payload = jwt.verify(token, process.env.JWT_SECRET || 'super-toto-dev-secret');
       socket.user = { id: payload.id, role: payload.role };
       return next();
     } catch {

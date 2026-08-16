@@ -27,7 +27,7 @@ async function start() {
   const mongo = await connectDB();
   await seedIfEmpty(mongo);
   server.listen(PORT, () => {
-    console.log(`[server] Book Toto Local API running at http://localhost:${PORT}`);
+    console.log(`[server] Super Toto Local API running at http://localhost:${PORT}`);
   });
 }
 

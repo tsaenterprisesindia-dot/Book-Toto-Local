@@ -1,7 +1,7 @@
 {
-  "name": "Book Toto Local",
-  "short_name": "Book Toto",
-  "description": "Book Toto Local connects you with nearby totos & e-rickshaws in minutes — with live tracking, transparent fares, mock payments and Face Recognition login. A Unit of TSA Enterprises.",
+  "name": "Super Toto Local",
+  "short_name": "Super Toto",
+  "description": "Super Toto Local connects you with nearby totos & e-rickshaws in minutes — with live tracking, transparent fares, mock payments and Face Recognition login. A Unit of TSA Enterprises.",
   "id": "/",
   "start_url": "/",
   "scope": "/",

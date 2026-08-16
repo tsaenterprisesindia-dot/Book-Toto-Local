@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
-import logo from '../assets/book-toto-logo.png';
+import logo from '../assets/super-toto-logo.png';
 
 export default function Login() {
   const { login } = useAuth();
@@ -36,7 +36,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="card auth-card fade-in">
         <div className="auth-title">
-          <img src={logo} alt="Book Toto Local logo" className="auth-logo" /> Book Toto Local
+          <img src={logo} alt="Super Toto Local logo" className="auth-logo" /> Super Toto Local
         </div>
         <p className="muted">Log in to continue</p>
 
@@ -73,9 +73,9 @@ export default function Login() {
             Demo accounts (password: demo123)
           </div>
           <div className="row">
-            <button className="btn btn-ghost small" onClick={() => quick('rider@booktoto.local')}>Rider</button>
-            <button className="btn btn-ghost small" onClick={() => quick('driver@booktoto.local')}>Driver</button>
-            <button className="btn btn-ghost small" onClick={() => quick('admin@booktoto.local')}>Admin</button>
+            <button className="btn btn-ghost small" onClick={() => quick('rider@supertoto.local')}>Rider</button>
+            <button className="btn btn-ghost small" onClick={() => quick('driver@supertoto.local')}>Driver</button>
+            <button className="btn btn-ghost small" onClick={() => quick('admin@supertoto.local')}>Admin</button>
           </div>
           <div className="small muted mt">Admins always sign in with password (no face login).</div>
         </div>

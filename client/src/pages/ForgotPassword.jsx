@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import client from '../api/client.js';
 import PasswordInput from '../components/PasswordInput.jsx';
-import logo from '../assets/book-toto-logo.png';
+import logo from '../assets/super-toto-logo.png';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function ForgotPassword() {
     <div className="auth-page">
       <div className="card auth-card fade-in">
         <div className="auth-title">
-          <img src={logo} alt="Book Toto Local logo" className="auth-logo" /> Forgot password
+          <img src={logo} alt="Super Toto Local logo" className="auth-logo" /> Forgot password
         </div>
         <p className="muted">
           {step === 1 && 'Enter your account email to receive a reset code.'}

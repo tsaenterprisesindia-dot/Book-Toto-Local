@@ -1,4 +1,4 @@
-# 🛺 Book Toto Local
+# 🛺 Super Toto Local
 
 A full-stack ride-hailing web app (like Ola / Uber / Rapido) for booking local totos & e-rickshaws — with rider booking, driver dispatch, live GPS tracking, admin dashboard, **Face Recognition login** for riders/drivers, and mock payments.
 
@@ -30,11 +30,11 @@ Open **http://localhost:5173**. The Vite dev server proxies `/api` and `/socket.
 
 | Role | Email | Password | Face login |
 | --- | --- | --- | --- |
-| Rider | `rider@booktoto.local` | `demo123` | Register a face first (see below) |
-| Driver | `driver@booktoto.local` | `demo123` | Register a face first |
-| Admin | `admin@booktoto.local` | `demo123` | Password only (no face) |
+| Rider | `rider@supertoto.local` | `demo123` | Register a face first (see below) |
+| Driver | `driver@supertoto.local` | `demo123` | Register a face first |
+| Admin | `admin@supertoto.local` | `demo123` | Password only (no face) |
 
-> Seeded accounts log in by **password** first. Then open **Profile → Register face** to enable Face Recognition login. After that you can use the **Face recognition** tab on the login screen.
+> Seeded accounts log in by **password** first. Then open **Profile → Register face** to enable Face Recognition login. After that you can use **Login → Log in with Face Recognition**.
 
 ## Face Recognition login — how it works
 
@@ -73,7 +73,7 @@ Open **http://localhost:5173**. The Vite dev server proxies `/api` and `/socket.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `MONGODB_URI` | (in-memory) | Persistent MongoDB connection (Atlas/local) |
-| `JWT_SECRET` | `book-toto-dev-secret` | JWT signing secret |
+| `JWT_SECRET` | `super-toto-dev-secret` | JWT signing secret |
 | `FACE_MATCH_THRESHOLD` | `0.6` | Max L2 distance to accept a face match |
 | `PORT` | `5000` | API port |
 
@@ -92,8 +92,8 @@ server/src
 client/src
   context/                AuthContext, SocketContext, FaceProvider (loads face-api.js + models)
   components/             MapView, RideTracker, Nav, Modal, FaceCapture (webcam modal)
-  pages/                  Landing, Login (password + face tabs), Register, RiderHome,
-                          DriverHome, AdminDashboard, RideHistory, Profile
+  pages/                  Landing, Login (password + face-login page), Register, RiderHome,
+                          DriverHome, AdminDashboard, RideHistory, Profile, FaceLogin, ForgotPassword
 ```
 
 ## Useful scripts

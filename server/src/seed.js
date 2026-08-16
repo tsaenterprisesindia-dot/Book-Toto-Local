@@ -53,7 +53,7 @@ async function seedDatabase() {
 
   const admin = await User.create({
     name: 'Toto Admin',
-    email: 'admin@booktoto.local',
+    email: 'admin@supertoto.local',
     phone: '+91 90000 00001',
     password,
     role: 'admin',
@@ -61,7 +61,7 @@ async function seedDatabase() {
 
   const rider = await User.create({
     name: 'Rider Demo',
-    email: 'rider@booktoto.local',
+    email: 'rider@supertoto.local',
     phone: '+91 90000 00002',
     password,
     role: 'rider',
@@ -69,7 +69,7 @@ async function seedDatabase() {
 
   const driver1 = await User.create({
     name: 'Bikash Sharma',
-    email: 'driver@booktoto.local',
+    email: 'driver@supertoto.local',
     phone: '+91 90000 00003',
     password,
     role: 'driver',
@@ -86,7 +86,7 @@ async function seedDatabase() {
 
   const driver2 = await User.create({
     name: 'Manoj Rai',
-    email: 'driver2@booktoto.local',
+    email: 'driver2@supertoto.local',
     phone: '+91 90000 00004',
     password,
     role: 'driver',
@@ -103,7 +103,7 @@ async function seedDatabase() {
 
   const driver3 = await User.create({
     name: 'Kumar Pradhan',
-    email: 'driver3@booktoto.local',
+    email: 'driver3@supertoto.local',
     phone: '+91 90000 00005',
     password,
     role: 'driver',
@@ -140,9 +140,9 @@ export async function seedIfEmpty(mongoServer) {
   }
   const { rider, driver1 } = await seedDatabase();
   console.log('[seed] demo data created');
-  console.log('[seed]   rider:  rider@booktoto.local / demo123');
-  console.log('[seed]   driver: driver@booktoto.local / demo123');
-  console.log('[seed]   admin:  admin@booktoto.local / demo123');
+console.log('[seed]   rider:  rider@supertoto.local / demo123');
+console.log('[seed]   driver: driver@supertoto.local / demo123');
+console.log('[seed]   admin:  admin@supertoto.local / demo123');
   console.log('[seed]   face login: log in with password, then enroll a face in Profile to enable Face Recognition');
   await mongoServer?.waitUntilReady?.();
 }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import logo from '../assets/book-toto-logo.png';
+import logo from '../assets/super-toto-logo.png';
 
 export default function Landing() {
   const { user } = useAuth();
@@ -9,7 +9,7 @@ export default function Landing() {
   return (
     <div className="landing">
       <div className="hero">
-        <img src={logo} alt="Book Toto Local logo" className="hero-logo" />
+        <img src={logo} alt="Super Toto Local logo" className="hero-logo" />
         <span className="chip chip-active" style={{ fontSize: 15, padding: '8px 16px' }}>
           Your local toto, on demand
         </span>
@@ -18,7 +18,7 @@ export default function Landing() {
           any time. Anywhere.
         </h1>
         <p>
-          Book Toto Local connects you with nearby totos &amp; e-rickshaws in minutes — with live
+          Super Toto Local connects you with nearby totos &amp; e-rickshaws in minutes — with live
           tracking, transparent fares, mock payments <b>and Face Recognition login</b>.
         </p>
         <p className="muted" style={{ marginTop: '-6px', marginBottom: '22px' }}>
@@ -43,17 +43,17 @@ export default function Landing() {
         <div className="demo-accounts">
           <div className="demo-account">
             <b>👤 Rider</b>
-            <div className="small muted">rider@booktoto.local</div>
+            <div className="small muted">rider@supertoto.local</div>
             <div className="small muted">demo123</div>
           </div>
           <div className="demo-account">
             <b>🛺 Driver</b>
-            <div className="small muted">driver@booktoto.local</div>
+            <div className="small muted">driver@supertoto.local</div>
             <div className="small muted">demo123</div>
           </div>
           <div className="demo-account">
             <b>🛠️ Admin</b>
-            <div className="small muted">admin@booktoto.local</div>
+            <div className="small muted">admin@supertoto.local</div>
             <div className="small muted">demo123</div>
           </div>
         </div>

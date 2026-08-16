@@ -163,7 +163,7 @@ export default function DriverHome() {
             <h2>⏳ Account pending approval</h2>
             <p>
               Your driver account is <b>{user.driverStatus}</b>. An admin must approve it before you
-              can go online. Try the seeded account <code>driver@booktoto.local / demo123</code> to
+              can go online. Try the seeded account <code>driver@supertoto.local / demo123</code> to
               see the full driver flow.
             </p>
           </div>
