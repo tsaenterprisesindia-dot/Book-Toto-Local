@@ -84,6 +84,66 @@ export default function authRoutes() {
     }
   });
 
+  // Forgot password: issue a 6-digit reset code.
+  // No mail service in this demo app, so the code is returned in the response
+  // as a stand-in for an email ("demo email"). In production, send it via email instead.
+  router.post('/forgot-password', async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required' });
+      }
+      const user = await User.findOne({ email: email.toLowerCase() });
+      if (!user) {
+        return res.status(404).json({ message: 'No account found with this email' });
+      }
+
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      user.resetCode = await bcrypt.hash(code, 10);
+      user.resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+      await user.save();
+
+      res.json({
+        message: 'Password reset code generated. Check your email (demo: shown below).',
+        demoCode: code,
+        expiresInMinutes: 15,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Reset password using the code from forgot-password.
+  router.post('/reset-password', async (req, res, next) => {
+    try {
+      const { email, code, newPassword } = req.body;
+      if (!email || !code || !newPassword) {
+        return res.status(400).json({ message: 'Email, code and new password are required' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: 'New password must be at least 6 characters' });
+      }
+
+      const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+      if (!user) return res.status(404).json({ message: 'No account found with this email' });
+      if (!user.resetCode || !user.resetExpires || user.resetExpires < new Date()) {
+        return res.status(400).json({ message: 'Reset code is missing or has expired. Request a new one.' });
+      }
+      if (!(await bcrypt.compare(String(code).trim(), user.resetCode))) {
+        return res.status(400).json({ message: 'Invalid reset code' });
+      }
+
+      user.password = await bcrypt.hash(newPassword, 10);
+      user.resetCode = null;
+      user.resetExpires = null;
+      await user.save();
+
+      res.json({ message: 'Password updated. You can now log in with your new password.' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get('/me', requireAuth, (req, res) => {
     res.json({ user: req.userDoc.toSafeJSON() });
   });

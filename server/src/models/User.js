@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
     faceDescriptor: { type: [Number], default: [] },
     faceRegistered: { type: Boolean, default: false },
 
+    // Password reset (demo: code is hashed on the user record, returned as "demo email")
+    resetCode: { type: String, default: null },
+    resetExpires: { type: Date, default: null },
+
     // Driver profile
     vehicleType: { type: String, default: 'Toto (E-Rickshaw)' },
     vehicleNumber: { type: String, default: '' },

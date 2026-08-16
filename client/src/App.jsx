@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
 import RiderHome from './pages/RiderHome.jsx';
 import DriverHome from './pages/DriverHome.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
@@ -24,6 +25,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register" element={<Register />} />
 
       <Route

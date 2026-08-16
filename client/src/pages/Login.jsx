@@ -98,6 +98,10 @@ export default function Login() {
               </button>
             </form>
 
+              <div className="small muted mt" style={{ textAlign: 'center' }}>
+                <Link to="/forgot-password">Forgot password?</Link>
+              </div>
+
             <div className="small muted mt" style={{ textAlign: 'center' }}>
               No account? <Link to="/register">Create one</Link>
             </div>
