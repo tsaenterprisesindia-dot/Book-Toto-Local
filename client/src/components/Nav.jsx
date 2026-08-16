@@ -15,7 +15,11 @@ export default function Nav() {
   return (
     <nav className="nav">
       <Link to={user ? home : '/'} className="brand">
-        <span className="toto">🛺</span> Book Toto Local
+        <span className="toto">🛺</span>
+        <span>
+          <span className="brand-name">Book Toto Local</span>
+          <span className="brand-unit">A Unit of TSA Enterprises</span>
+        </span>
       </Link>
       <div className="nav-links">
         {user?.role === 'rider' && (

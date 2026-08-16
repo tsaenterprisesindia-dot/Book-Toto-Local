@@ -17,8 +17,10 @@ export default function Landing() {
         </h1>
         <p>
           Book Toto Local connects you with nearby totos &amp; e-rickshaws in minutes — with live
-          tracking, transparent fares and a mock payment flow. Rider, driver and admin experiences
-          all in one app.
+          tracking, transparent fares, mock payments <b>and Face Recognition login</b>.
+        </p>
+        <p className="muted" style={{ marginTop: '-6px', marginBottom: '22px' }}>
+          A Unit of TSA Enterprises
         </p>
         <div className="hero-btns">
           <Link to={start} className="btn btn-primary btn-lg">
