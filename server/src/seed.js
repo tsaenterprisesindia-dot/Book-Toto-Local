@@ -59,7 +59,7 @@ async function seedDatabase() {
   const admin = await User.create({
     name: 'Toto Admin',
     email: 'admin@supertoto.local',
-    phone: '+91 90000 00001',
+    phone: '9000000001',
     password,
     role: 'admin',
   });
@@ -67,7 +67,7 @@ async function seedDatabase() {
   const rider = await User.create({
     name: 'Rider Demo',
     email: 'rider@supertoto.local',
-    phone: '+91 90000 00002',
+    phone: '9000000002',
     password,
     role: 'rider',
   });
@@ -75,7 +75,7 @@ async function seedDatabase() {
   const driver1 = await User.create({
     name: 'Bikash Sharma',
     email: 'driver@supertoto.local',
-    phone: '+91 90000 00003',
+    phone: '9000000003',
     password,
     role: 'driver',
     vehicleType: 'Toto (E-Rickshaw)',
@@ -92,7 +92,7 @@ async function seedDatabase() {
   const driver2 = await User.create({
     name: 'Manoj Rai',
     email: 'driver2@supertoto.local',
-    phone: '+91 90000 00004',
+    phone: '9000000004',
     password,
     role: 'driver',
     vehicleType: 'Toto (E-Rickshaw)',
@@ -109,7 +109,7 @@ async function seedDatabase() {
   const driver3 = await User.create({
     name: 'Kumar Pradhan',
     email: 'driver3@supertoto.local',
-    phone: '+91 90000 00005',
+    phone: '9000000005',
     password,
     role: 'driver',
     vehicleType: 'Auto Rickshaw',

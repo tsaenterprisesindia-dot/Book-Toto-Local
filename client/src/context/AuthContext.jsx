@@ -39,8 +39,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(
-    async (email, password, extra = {}) => {
-      const { data } = await client.post('/auth/login', { email, password, ...extra });
+    async (identifier, password, extra = {}) => {
+      const { data } = await client.post('/auth/login', { identifier, password, ...extra });
       persist(data);
       return data;
     },
@@ -50,6 +50,20 @@ export function AuthProvider({ children }) {
   const faceLogin = useCallback(
     async (email, descriptor) => {
       const { data } = await client.post('/auth/face-login', { email, descriptor });
+      persist(data);
+      return data;
+    },
+    [persist]
+  );
+
+  const sendOtp = useCallback(async (phone, purpose) => {
+    const { data } = await client.post('/auth/send-otp', { phone, purpose });
+    return data;
+  }, []);
+
+  const otpLogin = useCallback(
+    async (phone, otp) => {
+      const { data } = await client.post('/auth/otp-login', { phone, otp });
       persist(data);
       return data;
     },
@@ -79,7 +93,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, faceLogin, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, faceLogin, otpLogin, sendOtp, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

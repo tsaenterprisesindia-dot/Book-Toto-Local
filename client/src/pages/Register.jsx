@@ -8,7 +8,7 @@ import client from '../api/client.js';
 import logo from '../assets/super-toto-logo.png';
 
 export default function Register() {
-  const { register, refreshUser } = useAuth();
+  const { register, sendOtp, refreshUser } = useAuth();
   const face = useFace();
   const navigate = useNavigate();
 
@@ -21,6 +21,10 @@ export default function Register() {
     vehicleType: 'Toto (E-Rickshaw)',
     vehicleNumber: '',
   });
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [demoOtp, setDemoOtp] = useState('');
+  const [otpBusy, setOtpBusy] = useState(false);
   const [err, setErr] = useState('');
   const [faceOpen, setFaceOpen] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
@@ -28,16 +32,52 @@ export default function Register() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const isValidPhone = (raw) => {
+    let d = (raw || '').replace(/[\s\-()]/g, '');
+    if (d.startsWith('+91')) d = d.slice(3);
+    else if (d.startsWith('91') && d.length === 12) d = d.slice(2);
+    else if (d.startsWith('0') && d.length === 11) d = d.slice(1);
+    return /^[6-9]\d{9}$/.test(d);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setErr('');
+    if (!isValidPhone(form.phone)) {
+      setErr('Enter a valid 10-digit mobile number (e.g. 9xxxxxxxxx)');
+      return;
+    }
+    if (!otpSent || !otp) {
+      setErr('Verify your mobile number with the OTP first');
+      return;
+    }
     try {
-      const { user } = await register({ ...form, role });
+      const { user } = await register({ ...form, role, otp });
       // Auto-enroll a face for driver/rider so face login is usable right away.
       if (user.role !== 'admin') setFaceOpen(true);
       else navigate('/ride');
     } catch (err) {
       setErr(err.response?.data?.message || 'Registration failed');
+    }
+  };
+
+  const sendCode = async () => {
+    setErr('');
+    setDemoOtp('');
+    if (!isValidPhone(form.phone)) {
+      setErr('Enter a valid 10-digit mobile number (e.g. 9xxxxxxxxx)');
+      return;
+    }
+    setOtpBusy(true);
+    try {
+      const data = await sendOtp(form.phone, 'register');
+      setOtpSent(true);
+      setDemoOtp(data.demoOtp || '');
+      setOtp('');
+    } catch (e) {
+      setErr(e.response?.data?.message || 'Could not send OTP');
+    } finally {
+      setOtpBusy(false);
     }
   };
 
@@ -89,13 +129,51 @@ export default function Register() {
             <input className="input" value={form.name} onChange={set('name')} placeholder="Your name" required />
           </div>
           <div className="field">
-            <label>Email</label>
-            <input className="input" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required />
+            <label>Email (optional)</label>
+            <input className="input" type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" />
           </div>
           <div className="field">
-            <label>Phone</label>
-            <input className="input" value={form.phone} onChange={set('phone')} placeholder="+91 …" />
+            <label>Mobile number</label>
+            <div className="row">
+              <input
+                className="input"
+                value={form.phone}
+                onChange={(e) => {
+                  set('phone')(e);
+                  setOtpSent(false);
+                  setDemoOtp('');
+                  setOtp('');
+                }}
+                placeholder="+91 9xxxx xxxxx"
+                required
+                inputMode="numeric"
+              />
+              <button type="button" className="btn btn-ghost" onClick={sendCode} disabled={otpBusy || !form.phone}>
+                {otpBusy ? 'Sending…' : 'Send OTP'}
+              </button>
+            </div>
+            <div className="small muted">Used to log in. We'll verify it with a one-time password.</div>
           </div>
+
+          {otpSent && (
+            <div className="field">
+              {demoOtp && (
+                <div className="alert alert-info mb">
+                  <b>Demo SMS:</b> your OTP is <b>{demoOtp}</b> (valid 5 minutes). In production this would be
+                  sent to your phone.
+                </div>
+              )}
+              <label>One-time password</label>
+              <input
+                className="input"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="6-digit OTP"
+                inputMode="numeric"
+                required
+              />
+            </div>
+          )}
           <div className="field">
             <label>Password</label>
             <PasswordInput value={form.password} onChange={set('password')} placeholder="min 6 characters" required />

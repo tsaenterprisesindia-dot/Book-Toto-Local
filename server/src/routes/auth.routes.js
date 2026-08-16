@@ -3,6 +3,20 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
 import { createCaptcha, verifyCaptcha } from '../utils/captcha.js';
+import { normalizePhone } from '../utils/phone.js';
+import { createOtp, verifyOtp } from '../utils/otp.js';
+
+// Resolve an account by an email address or an Indian mobile number.
+// 'identifier' may be either; returns the matching User (or null).
+async function findByIdentifier(identifier = '', select) {
+  const value = String(identifier).trim();
+  if (!value) return null;
+  if (value.includes('@')) {
+    return User.findOne({ email: value.toLowerCase() }).select(select);
+  }
+  const phone = normalizePhone(value);
+  return phone ? User.findOne({ phone }).select(select) : null;
+}
 
 export default function authRoutes() {
   const router = Router();
@@ -15,17 +29,31 @@ export default function authRoutes() {
 
   router.post('/register', async (req, res, next) => {
     try {
-      const { name, email, phone, password, role, vehicleType, vehicleNumber } = req.body;
-      if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Name, email and password are required' });
+      const { name, email, phone: rawPhone, password, role, vehicleType, vehicleNumber, otp } = req.body;
+      if (!name || !password) {
+        return res.status(400).json({ message: 'Name and password are required' });
+      }
+      const phone = normalizePhone(rawPhone);
+      if (!phone) {
+        return res.status(400).json({ message: 'A valid 10-digit mobile number is required' });
       }
       if (password.length < 6) {
         return res.status(400).json({ message: 'Password must be at least 6 characters' });
       }
+      const emailValue = email ? String(email).trim().toLowerCase() : '';
+      if (emailValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+        return res.status(400).json({ message: 'Enter a valid email address' });
+      }
+      // Mobile number must be verified with an OTP before creating the account.
+      if (!(await verifyOtp(phone, 'register', otp))) {
+        return res.status(400).json({ message: 'Invalid or expired mobile OTP. Please request a new one.' });
+      }
 
-      const exists = await User.findOne({ email: email.toLowerCase() });
+      const exists = await User.findOne({
+        $or: [{ phone }, ...(emailValue ? [{ email: emailValue }] : [])],
+      });
       if (exists) {
-        return res.status(409).json({ message: 'An account with this email already exists' });
+        return res.status(409).json({ message: 'An account with this email or mobile number already exists' });
       }
 
       const userRole = ['rider', 'driver'].includes(role) ? role : 'rider';
@@ -33,7 +61,7 @@ export default function authRoutes() {
 
       const user = await User.create({
         name,
-        email,
+        email: emailValue || undefined,
         phone,
         password: hashed,
         role: userRole,
@@ -49,12 +77,75 @@ export default function authRoutes() {
     }
   });
 
+  // Send a one-time password to a mobile number for login or registration.
+  router.post('/send-otp', async (req, res, next) => {
+    try {
+      const { phone: rawPhone, purpose } = req.body;
+      const phone = normalizePhone(rawPhone);
+      if (!phone) {
+        return res.status(400).json({ message: 'A valid 10-digit mobile number is required' });
+      }
+      if (!['login', 'register'].includes(purpose)) {
+        return res.status(400).json({ message: 'Purpose must be login or register' });
+      }
+
+      if (purpose === 'register') {
+        const taken = await User.findOne({ phone });
+        if (taken) {
+          return res.status(409).json({ message: 'An account with this mobile number already exists. Log in instead.' });
+        }
+      } else if (purpose === 'login') {
+        const user = await User.findOne({ phone });
+        if (!user) {
+          return res.status(404).json({ message: 'No account found with this mobile number. Create an account first.' });
+        }
+        if (user.role === 'admin') {
+          return res.status(403).json({ message: 'Admins must log in with password and security check.' });
+        }
+        if (user.isHidden) {
+          return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+        }
+      }
+
+      const demoOtp = await createOtp(phone, purpose);
+      res.json({
+        message: 'OTP sent to your mobile (demo: shown below). Valid for 5 minutes.',
+        demoOtp,
+        expiresInMinutes: 5,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Mobile OTP login — no password needed.
+  router.post('/otp-login', async (req, res, next) => {
+    try {
+      const { phone: rawPhone, otp } = req.body;
+      const phone = normalizePhone(rawPhone);
+      if (!phone || !(await verifyOtp(phone, 'login', otp))) {
+        return res.status(400).json({ message: 'Invalid or expired OTP. Please request a new one.' });
+      }
+      const user = await User.findOne({ phone }).select('+password');
+      if (!user) {
+        return res.status(404).json({ message: 'No account found with this mobile number' });
+      }
+      if (user.isHidden) {
+        return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+      }
+      const token = signToken(user);
+      res.json({ token, user: user.toSafeJSON() });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.post('/login', async (req, res, next) => {
     try {
-      const { email, password, captchaId, captchaAnswer } = req.body;
-      const user = await User.findOne({ email: (email || '').toLowerCase() }).select('+password');
+      const { identifier, email, password, captchaId, captchaAnswer } = req.body;
+      const user = await findByIdentifier(identifier || email || '', '+password');
       if (!user || !(await bcrypt.compare(password || '', user.password))) {
-        return res.status(401).json({ message: 'Invalid email or password' });
+        return res.status(401).json({ message: 'Invalid email/mobile or password' });
       }
       if (user.isHidden) {
         return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
@@ -106,13 +197,13 @@ export default function authRoutes() {
   // as a stand-in for an email ("demo email"). In production, send it via email instead.
   router.post('/forgot-password', async (req, res, next) => {
     try {
-      const { email } = req.body;
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required' });
+      const { identifier, email } = req.body;
+      if (!identifier && !email) {
+        return res.status(400).json({ message: 'Email or mobile number is required' });
       }
-      const user = await User.findOne({ email: email.toLowerCase() });
+      const user = await findByIdentifier(identifier || email || '');
       if (!user) {
-        return res.status(404).json({ message: 'No account found with this email' });
+        return res.status(404).json({ message: 'No account found with this email or mobile number' });
       }
       if (user.isHidden) {
         return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
@@ -136,16 +227,16 @@ export default function authRoutes() {
   // Reset password using the code from forgot-password.
   router.post('/reset-password', async (req, res, next) => {
     try {
-      const { email, code, newPassword } = req.body;
-      if (!email || !code || !newPassword) {
-        return res.status(400).json({ message: 'Email, code and new password are required' });
+      const { identifier, email, code, newPassword } = req.body;
+      if ((!identifier && !email) || !code || !newPassword) {
+        return res.status(400).json({ message: 'Email/mobile, code and new password are required' });
       }
       if (newPassword.length < 6) {
         return res.status(400).json({ message: 'New password must be at least 6 characters' });
       }
 
-      const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-      if (!user) return res.status(404).json({ message: 'No account found with this email' });
+      const user = await findByIdentifier(identifier || email || '', '+password');
+      if (!user) return res.status(404).json({ message: 'No account found with this email or mobile number' });
       if (!user.resetCode || !user.resetExpires || user.resetExpires < new Date()) {
         return res.status(400).json({ message: 'Reset code is missing or has expired. Request a new one.' });
       }

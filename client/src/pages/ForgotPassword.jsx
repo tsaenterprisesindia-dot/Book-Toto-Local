@@ -7,7 +7,7 @@ import logo from '../assets/super-toto-logo.png';
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1 = request code, 2 = enter code + new password
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -22,7 +22,7 @@ export default function ForgotPassword() {
     setError('');
     setInfo('');
     try {
-      const { data } = await client.post('/auth/forgot-password', { email });
+      const { data } = await client.post('/auth/forgot-password', { identifier });
       setDemoCode(data.demoCode || '');
       setInfo(data.message || 'Reset code sent.');
       setStep(2);
@@ -43,7 +43,7 @@ export default function ForgotPassword() {
     setError('');
     setInfo('');
     try {
-      const { data } = await client.post('/auth/reset-password', { email, code, newPassword });
+      const { data } = await client.post('/auth/reset-password', { identifier, code, newPassword });
       setInfo(data.message || 'Password updated.');
       setStep(3);
     } catch (err) {
@@ -60,8 +60,8 @@ export default function ForgotPassword() {
           <img src={logo} alt="Super Toto Local logo" className="auth-logo" /> Forgot password
         </div>
         <p className="muted">
-          {step === 1 && 'Enter your account email to receive a reset code.'}
-          {step === 2 && `Enter the 6-digit code sent to ${email} and choose a new password.`}
+          {step === 1 && 'Enter your account email or mobile number to receive a reset code.'}
+          {step === 2 && `Enter the 6-digit code sent to ${identifier} and choose a new password.`}
           {step === 3 && 'Password reset complete.'}
         </p>
 
@@ -71,16 +71,15 @@ export default function ForgotPassword() {
         {step === 1 && (
           <form onSubmit={requestCode}>
             <div className="field">
-              <label>Email</label>
+              <label>Email or mobile</label>
               <input
                 className="input"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or +91 9xxxx xxxxx"
               />
             </div>
-            <button className="btn btn-primary btn-block btn-lg" disabled={!email || busy}>
+            <button className="btn btn-primary btn-block btn-lg" disabled={!identifier || busy}>
               {busy ? 'Sending…' : 'Send reset code'}
             </button>
           </form>
