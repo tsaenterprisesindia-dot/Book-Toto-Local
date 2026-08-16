@@ -90,36 +90,74 @@ export default function AdminDashboard() {
         {msg && <div className="alert alert-green mb">{msg}</div>}
 
         {stats && (
-          <div className="stats-grid mb">
-            <div className="card stat">
-              <div className="num" style={{ color: 'var(--brand-dark)' }}>{stats.riders}</div>
-              <div className="lbl">Riders</div>
+          <>
+            <div className="stats-grid mb">
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--brand-dark)' }}>{stats.riders}</div>
+                <div className="lbl">Riders</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: '#1d4ed8' }}>{stats.drivers}</div>
+                <div className="lbl">Drivers registered</div>
+              </div>
+              <div className="card stat">
+                <div className="num">{stats.online}</div>
+                <div className="lbl">Drivers online</div>
+              </div>
+              <div className="card stat">
+                <div className="num">{stats.rides}</div>
+                <div className="lbl">Total rides</div>
+              </div>
+              <div className="card stat">
+                <div className="num">{stats.ridesToday}</div>
+                <div className="lbl">Rides today</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--amber)' }}>{formatINR(stats.revenue)}</div>
+                <div className="lbl">Rider payments (all)</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--amber)' }}>{formatINR(stats.paid)}</div>
+                <div className="lbl">Collected</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--brand-dark)' }}>{formatINR(stats.outstanding)}</div>
+                <div className="lbl">Outstanding ({stats.pendingCount})</div>
+              </div>
             </div>
-            <div className="card stat">
-              <div className="num" style={{ color: '#1d4ed8' }}>{stats.drivers}</div>
-              <div className="lbl">Drivers registered</div>
+
+            <h3 style={{ margin: '0 0 12px' }}>💸 Platform earnings</h3>
+            <div className="stats-grid mb">
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--brand-dark)' }}>{formatINR(stats.platformRevenue)}</div>
+                <div className="lbl">Platform total (commission + GST + fees)</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: '#1d4ed8' }}>{formatINR(stats.commission)}</div>
+                <div className="lbl">Commission (15%)</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: '#1d4ed8' }}>{formatINR(stats.gst)}</div>
+                <div className="lbl">GST collected (5%)</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--amber)' }}>{formatINR(stats.cancellationFees)}</div>
+                <div className="lbl">Cancellation fees ({formatINR(stats.cancellationFeesPaid)} paid)</div>
+              </div>
+              <div className="card stat">
+                <div className="num" style={{ color: 'var(--brand-dark)' }}>{formatINR(stats.driverEarnings)}</div>
+                <div className="lbl">Paid out to drivers</div>
+              </div>
+              <div className="card stat">
+                <div className="num">
+                  📱 {stats.methods.UPI.rides} · 💵 {stats.methods.Cash.rides} · 💳 {stats.methods.Card.rides}
+                </div>
+                <div className="lbl">
+                  Paid rides by method (UPI {formatINR(stats.methods.UPI.amount)} · Cash {formatINR(stats.methods.Cash.amount)} · Card {formatINR(stats.methods.Card.amount)})
+                </div>
+              </div>
             </div>
-            <div className="card stat">
-              <div className="num">{stats.online}</div>
-              <div className="lbl">Drivers online</div>
-            </div>
-            <div className="card stat">
-              <div className="num">{stats.rides}</div>
-              <div className="lbl">Total rides</div>
-            </div>
-            <div className="card stat">
-              <div className="num">{stats.ridesToday}</div>
-              <div className="lbl">Rides today</div>
-            </div>
-            <div className="card stat">
-              <div className="num" style={{ color: 'var(--amber)' }}>{formatINR(stats.revenue)}</div>
-              <div className="lbl">Revenue (all)</div>
-            </div>
-            <div className="card stat">
-              <div className="num" style={{ color: 'var(--amber)' }}>{formatINR(stats.paid)}</div>
-              <div className="lbl">Collected</div>
-            </div>
-          </div>
+          </>
         )}
 
         <div className="tab-row" style={{ maxWidth: 420 }}>
@@ -167,6 +205,7 @@ export default function AdminDashboard() {
                   <th>Fare</th>
                   <th>Status</th>
                   <th>Payment</th>
+                  <th>Method</th>
                 </tr>
               </thead>
               <tbody>
@@ -178,17 +217,23 @@ export default function AdminDashboard() {
                     <td className="small">
                       {r.pickup.name} → {r.drop.name}
                     </td>
-                    <td>{formatINR(r.fare)}</td>
+                    <td>
+                      {formatINR(r.status === 'cancelled_by_rider' && r.cancellationFee > 0 ? r.cancellationFee : r.fare)}
+                      {r.status === 'cancelled_by_rider' && r.cancellationFee > 0 && (
+                        <div className="small muted">cancellation fee</div>
+                      )}
+                    </td>
                     <td>
                       <span className={`badge ${r.status === 'completed' ? 'badge-green' : ['cancelled_by_rider', 'cancelled_by_driver', 'no_driver'].includes(r.status) ? 'badge-red' : 'badge-blue'}`}>
                         {r.status}
                       </span>
                     </td>
                     <td>
-                      <span className={`badge ${r.payment?.status === 'paid' ? 'badge-green' : 'badge-gray'}`}>
+                      <span className={`badge ${r.payment?.status === 'paid' ? 'badge-green' : r.payment?.status === 'cash_pending' ? 'badge-amber' : 'badge-gray'}`}>
                         {r.payment?.status || '—'}
                       </span>
                     </td>
+                    <td>{r.payment?.method || '—'}</td>
                   </tr>
                 ))}
               </tbody>

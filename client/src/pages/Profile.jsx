@@ -58,7 +58,7 @@ export default function Profile() {
           { label: 'Vehicle number', value: user?.vehicleNumber || '—' },
           { label: 'Driver status', value: user?.driverStatus },
           { label: 'Rating', value: `⭐ ${user?.rating?.toFixed?.(1)}` },
-          { label: 'Earnings', value: `₹${(user?.earnings || 0).toLocaleString('en-IN')}` },
+          { label: 'Net earnings', value: `₹${(user?.earnings || 0).toLocaleString('en-IN')}` },
           { label: 'Total rides', value: String(user?.totalRides || 0) },
         ]
       : []),

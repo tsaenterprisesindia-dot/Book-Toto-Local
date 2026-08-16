@@ -18,14 +18,20 @@ const rideSchema = new mongoose.Schema(
 
     distanceKm: { type: Number, default: 0 },
     durationMin: { type: Number, default: 0 },
-    fare: { type: Number, default: 0 },
+    fare: { type: Number, default: 0 }, // total charged to the rider (incl. GST)
     fareBreakup: {
       base: { type: Number, default: 0 },
       distance: { type: Number, default: 0 },
       time: { type: Number, default: 0 },
       surge: { type: Number, default: 1 },
+      subtotal: { type: Number, default: 0 }, // fare before surge & tax
+      gross: { type: Number, default: 0 }, // subtotal x surge
+      gst: { type: Number, default: 0 }, // 5% GST collected
+      commission: { type: Number, default: 0 }, // platform commission
+      driverEarnings: { type: Number, default: 0 }, // gross - commission
       total: { type: Number, default: 0 },
     },
+    cancellationFee: { type: Number, default: 0 }, // charged if rider cancels after a driver accepts
 
     status: {
       type: String,
@@ -43,8 +49,13 @@ const rideSchema = new mongoose.Schema(
     },
 
     payment: {
-      status: { type: String, enum: ['pending', 'paid'], default: 'pending' },
-      method: { type: String, default: '' },
+      status: {
+        type: String,
+        enum: ['pending', 'cash_pending', 'paid'],
+        default: 'pending',
+      },
+      method: { type: String, default: '' }, // UPI | Cash | Card
+      amount: { type: Number, default: 0 }, // amount the rider paid / owes
       paidAt: { type: Date, default: null },
     },
 

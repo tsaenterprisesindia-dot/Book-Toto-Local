@@ -186,14 +186,40 @@ export default function RiderHome() {
                         <span className="muted">Distance</span>
                         <b>{estimate.distanceKm} km · ~{estimate.durationMin} min</b>
                       </div>
+                      <div className="spread">
+                        <span className="muted">Base + distance + time</span>
+                        <b>
+                          ₹{estimate.fare.base} + ₹{estimate.fare.distance} + ₹{estimate.fare.time}
+                        </b>
+                      </div>
+                      {estimate.fare.surge > 1 ? (
+                        <div className="spread">
+                          <span className="muted">
+                            Surge <span className="badge badge-red" style={{ marginLeft: 6 }}>×{estimate.fare.surge}</span>
+                          </span>
+                          <b>{formatINR(estimate.fare.gross - estimate.fare.subtotal)} extra</b>
+                        </div>
+                      ) : (
+                        <div className="spread">
+                          <span className="muted">Surge</span>
+                          <b className="badge badge-green">×1.0 — no surge</b>
+                        </div>
+                      )}
+                      <div className="spread">
+                        <span className="muted">GST (5%)</span>
+                        <b>{formatINR(estimate.fare.gst)}</b>
+                      </div>
+                      <hr style={{ border: 'none', borderTop: '1px dashed var(--line)', margin: '10px 0' }} />
                       <div className="spread" style={{ fontSize: 20, fontWeight: 800 }}>
-                        <span>Estimated fare</span>
+                        <span>Estimated total</span>
                         <span style={{ color: 'var(--brand-dark)' }}>{formatINR(estimate.fare.total)}</span>
                       </div>
-                      <div className="small muted">
-                        Base ₹{estimate.fare.base} + distance ₹{estimate.fare.distance} + time ₹
-                        {estimate.fare.time}
-                      </div>
+                      {estimate.activeRequests > 0 && (
+                        <div className="small muted mt">
+                          {estimate.activeRequests} active request(s) · {estimate.onlineDrivers} driver(s)
+                          online — surge adjusts automatically.
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="alert alert-info">Select a drop to see the fare estimate.</div>
@@ -214,7 +240,7 @@ export default function RiderHome() {
                     <li>Your request is sent to the nearest online driver.</li>
                     <li>The driver has 25 seconds to accept.</li>
                     <li>Once accepted you can track them live on the map.</li>
-                    <li>Pay with the mock UPI at the end of the trip.</li>
+                    <li>Pay by UPI, Cash or Card at the end of the trip.</li>
                   </ul>
                 </div>
               </div>

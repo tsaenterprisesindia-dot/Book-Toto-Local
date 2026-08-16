@@ -9,27 +9,86 @@ export default function adminRoutes() {
 
   router.get('/stats', async (_req, res, next) => {
     try {
-      const [riders, drivers, rides, online, completed] = await Promise.all([
-        User.countDocuments({ role: 'rider' }),
-        User.countDocuments({ role: 'driver' }),
-        Ride.countDocuments(),
-        User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved' }),
-        Ride.aggregate([
-          { $match: { status: 'completed', payment: { $ne: null } } },
-          {
-            $group: {
-              _id: null,
-              revenue: { $sum: '$fare' },
-              paid: { $sum: { $cond: [{ $eq: ['$payment.status', 'paid'] }, '$fare', 0] } },
-              avgFare: { $avg: '$fare' },
+      const [riders, drivers, rides, online, completed, cancelled, methods, collected] =
+        await Promise.all([
+          User.countDocuments({ role: 'rider' }),
+          User.countDocuments({ role: 'driver' }),
+          Ride.countDocuments(),
+          User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved' }),
+          Ride.aggregate([
+            { $match: { status: 'completed' } },
+            {
+              $group: {
+                _id: null,
+                revenue: { $sum: '$fare' },
+                paid: { $sum: { $cond: [{ $eq: ['$payment.status', 'paid'] }, '$fare', 0] } },
+                avgFare: { $avg: '$fare' },
+                commission: { $sum: '$fareBreakup.commission' },
+                gst: { $sum: '$fareBreakup.gst' },
+                driverEarnings: { $sum: '$fareBreakup.driverEarnings' },
+              },
             },
-          },
-        ]),
-      ]);
+          ]),
+          Ride.aggregate([
+            { $match: { status: 'cancelled_by_rider' } },
+            {
+              $group: {
+                _id: null,
+                fees: { $sum: '$cancellationFee' },
+                paidFees: {
+                  $sum: { $cond: [{ $eq: ['$payment.status', 'paid'] }, '$cancellationFee', 0] },
+                },
+              },
+            },
+          ]),
+          Ride.aggregate([
+            { $match: { status: 'completed' } },
+            {
+              $group: {
+                _id: '$payment.method',
+                rides: { $sum: 1 },
+                amount: { $sum: '$fare' },
+              },
+            },
+          ]),
+          Ride.aggregate([
+            {
+              $match: {
+                status: { $in: ['completed', 'cancelled_by_rider'] },
+                payment: { $ne: null },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                outstanding: {
+                  $sum: {
+                    $cond: [
+                      { $in: ['$payment.status', ['pending', 'cash_pending']] },
+                      '$payment.amount',
+                      0,
+                    ],
+                  },
+                },
+                pendingCount: {
+                  $sum: {
+                    $cond: [{ $in: ['$payment.status', ['pending', 'cash_pending']] }, 1, 0],
+                  },
+                },
+              },
+            },
+          ]),
+        ]);
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const ridesToday = await Ride.countDocuments({ createdAt: { $gte: today } });
+
+      const methodBreakdown = {
+        UPI: methods.find((m) => m._id === 'UPI') || { rides: 0, amount: 0 },
+        Cash: methods.find((m) => m._id === 'Cash') || { rides: 0, amount: 0 },
+        Card: methods.find((m) => m._id === 'Card') || { rides: 0, amount: 0 },
+      };
 
       res.json({
         stats: {
@@ -41,6 +100,18 @@ export default function adminRoutes() {
           revenue: completed[0]?.revenue || 0,
           paid: completed[0]?.paid || 0,
           avgFare: Math.round(completed[0]?.avgFare || 0),
+          commission: completed[0]?.commission || 0,
+          gst: completed[0]?.gst || 0,
+          driverEarnings: completed[0]?.driverEarnings || 0,
+          cancellationFees: cancelled[0]?.fees || 0,
+          cancellationFeesPaid: cancelled[0]?.paidFees || 0,
+          platformRevenue:
+            (completed[0]?.commission || 0) +
+            (completed[0]?.gst || 0) +
+            (cancelled[0]?.paidFees || 0),
+          outstanding: collected[0]?.outstanding || 0,
+          pendingCount: collected[0]?.pendingCount || 0,
+          methods: methodBreakdown,
         },
       });
     } catch (err) {

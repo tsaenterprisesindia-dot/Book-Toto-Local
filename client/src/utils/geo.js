@@ -37,6 +37,12 @@ export function formatINR(amount) {
   return `₹${Number(amount || 0).toLocaleString('en-IN')}`;
 }
 
+export const PAYMENT_METHODS = [
+  { id: 'UPI', label: 'UPI', icon: '📱' },
+  { id: 'Cash', label: 'Cash', icon: '💵' },
+  { id: 'Card', label: 'Card', icon: '💳' },
+];
+
 export function formatTime(d) {
   if (!d) return '—';
   return new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });

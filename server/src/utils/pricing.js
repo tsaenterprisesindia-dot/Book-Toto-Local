@@ -7,6 +7,9 @@ export const PRICING = {
   searchRadiusKm: 6,
   surgeFloor: 1.0,
   surgeCeil: 1.6,
+  gstRate: 0.05, // 5% GST on the gross fare
+  commissionRate: 0.15, // 15% platform commission on the gross fare
+  cancellationFee: 20, // rider is charged when cancelling after a driver accepts
 };
 
 // ---- Face recognition helpers ----
@@ -57,12 +60,39 @@ export function estimate(distanceKm) {
   return { distanceKm, durationMin: Math.max(2, Math.round(durationMin)) };
 }
 
+export function computeSurge(activeRequests, onlineDrivers) {
+  const online = Math.max(onlineDrivers, 1);
+  const ratio = activeRequests / online;
+  // No surge while supply comfortably covers demand (ratio <= 0.6).
+  // Otherwise scale linearly from 1.0 up to the surge ceiling.
+  const surge =
+    ratio <= 0.6
+      ? 1.0
+      : Math.min(PRICING.surgeCeil, 1 + (ratio - 0.6) * 0.5);
+  return Math.round(surge * 100) / 100;
+}
+
 export function computeFare(distanceKm, durationMin, surge = 1) {
   const base = PRICING.base;
   const distance = Math.round(distanceKm * PRICING.perKm);
   const time = Math.round(durationMin * PRICING.perMin);
   const raw = base + distance + time;
-  const subTotal = Math.max(raw, PRICING.minimum);
-  const total = Math.round(subTotal * surge);
-  return { base, distance, time, surge, total };
+  const subtotal = Math.max(raw, PRICING.minimum); // fare before surge & tax
+  const gross = Math.round(subtotal * surge); // what the fare earns pre-tax
+  const gst = Math.round(gross * PRICING.gstRate); // 5% GST paid by the rider
+  const commission = Math.round(gross * PRICING.commissionRate); // platform cut
+  const driverEarnings = gross - commission; // what the driver keeps
+  const total = gross + gst; // what the rider is charged (incl. GST)
+  return {
+    base,
+    distance,
+    time,
+    surge,
+    subtotal,
+    gross,
+    gst,
+    commission,
+    driverEarnings,
+    total,
+  };
 }

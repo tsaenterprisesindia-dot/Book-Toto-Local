@@ -19,7 +19,7 @@ export default function Landing() {
         </h1>
         <p>
           Super Toto Local connects you with nearby totos &amp; e-rickshaws in minutes — with live
-          tracking, transparent fares, mock payments <b>and Face Recognition login</b>.
+          tracking, transparent fares, GST, surge pricing, UPI/Cash/Card payments <b>and Face Recognition login</b>.
         </p>
         <p className="muted" style={{ marginTop: '-6px', marginBottom: '22px' }}>
           A Unit of TSA Enterprises
@@ -86,8 +86,8 @@ export default function Landing() {
         </div>
         <div className="feature">
           <div className="icon">💳</div>
-          <h4>Mock payments</h4>
-          <p>Cashless UPI-style payment flow after every completed ride.</p>
+          <h4>Smart payments</h4>
+          <p>Pay by UPI, Card or Cash after every ride, with transparent GST, surge pricing and driver commission.</p>
         </div>
         <div className="feature">
           <div className="icon">⭐</div>

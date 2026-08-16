@@ -143,8 +143,30 @@ export default function driverRoutes(io) {
       await User.findByIdAndUpdate(req.user.id, {
         currentRide: null,
         isOnline: true,
-        $inc: { totalRides: 1, earnings: req.ride.fare },
+        $inc: {
+          totalRides: 1,
+          earnings: req.ride.fareBreakup.driverEarnings || 0,
+        },
       });
+      emitRideUpdate(io, req.ride._id);
+      res.json({ ride: await toRideDTO(req.ride._id) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Driver confirms cash collection for a completed ride paid by cash
+  router.post('/settle/:id', requireApproved, assignedRide, async (req, res, next) => {
+    try {
+      if (req.ride.status !== 'completed') {
+        return res.status(400).json({ message: 'Ride is not completed yet' });
+      }
+      if (req.ride.payment.status !== 'cash_pending') {
+        return res.status(400).json({ message: 'No cash payment pending on this ride' });
+      }
+      req.ride.payment.status = 'paid';
+      req.ride.payment.paidAt = new Date();
+      await req.ride.save();
       emitRideUpdate(io, req.ride._id);
       res.json({ ride: await toRideDTO(req.ride._id) });
     } catch (err) {
@@ -157,11 +179,17 @@ export default function driverRoutes(io) {
       const completed = await Ride.find({
         driver: req.user.id,
         status: 'completed',
-      }).sort({ createdAt: -1 }).limit(20).select('fare payment createdAt drop pickup distanceKm');
+      }).sort({ createdAt: -1 }).limit(20).select('fare fareBreakup payment createdAt drop pickup distanceKm');
 
       const totals = await Ride.aggregate([
         { $match: { driver: new mongoose.Types.ObjectId(req.user.id), status: 'completed' } },
-        { $group: { _id: null, revenue: { $sum: '$fare' }, count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: null,
+            revenue: { $sum: '$fareBreakup.driverEarnings' },
+            count: { $sum: 1 },
+          },
+        },
       ]);
 
       const online = await User.find({

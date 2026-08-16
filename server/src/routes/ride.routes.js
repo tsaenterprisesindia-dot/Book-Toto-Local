@@ -3,12 +3,34 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Ride from '../models/Ride.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { haversineKm, estimate, computeFare } from '../utils/pricing.js';
+import {
+  haversineKm,
+  estimate,
+  computeFare,
+  computeSurge,
+  PRICING,
+} from '../utils/pricing.js';
 import {
   dispatchRideRequest,
   emitRideUpdate,
   clearDispatchTimer,
 } from '../socket.js';
+
+const PAYMENT_METHODS = ['UPI', 'Cash', 'Card'];
+
+async function surgeContext() {
+  const [activeRequests, onlineDrivers] = await Promise.all([
+    Ride.countDocuments({ status: 'requested' }),
+    User.countDocuments({
+      role: 'driver',
+      driverStatus: 'approved',
+      isOnline: true,
+      currentRide: null,
+      'location.lat': { $ne: null },
+    }),
+  ]);
+  return { activeRequests, onlineDrivers };
+}
 
 export default function rideRoutes(io) {
   const router = Router();
@@ -22,8 +44,17 @@ export default function rideRoutes(io) {
       }
       const distanceKm = haversineKm(pickup, drop);
       const { durationMin } = estimate(distanceKm);
-      const fare = computeFare(distanceKm, durationMin);
-      res.json({ distanceKm: +distanceKm.toFixed(2), durationMin, fare });
+      const { activeRequests, onlineDrivers } = await surgeContext();
+      const surge = computeSurge(activeRequests, onlineDrivers);
+      const fare = computeFare(distanceKm, durationMin, surge);
+      res.json({
+        distanceKm: +distanceKm.toFixed(2),
+        durationMin,
+        fare,
+        surge,
+        activeRequests,
+        onlineDrivers,
+      });
     } catch (err) {
       next(err);
     }
@@ -46,7 +77,9 @@ export default function rideRoutes(io) {
 
       const distanceKm = haversineKm(pickup, drop);
       const { durationMin } = estimate(distanceKm);
-      const fare = computeFare(distanceKm, durationMin);
+      const { activeRequests, onlineDrivers } = await surgeContext();
+      const surge = computeSurge(activeRequests, onlineDrivers);
+      const fare = computeFare(distanceKm, durationMin, surge);
 
       const ride = await Ride.create({
         rider: req.user.id,
@@ -118,36 +151,57 @@ export default function rideRoutes(io) {
       clearDispatchTimer(ride._id);
       ride.status = 'cancelled_by_rider';
       ride.cancelledAt = new Date();
-      await ride.save();
-
+      // The rider is charged a cancellation fee only once a driver has accepted.
       if (ride.driver) {
+        ride.cancellationFee = PRICING.cancellationFee;
+        ride.payment.amount = PRICING.cancellationFee;
         await User.findByIdAndUpdate(ride.driver, { currentRide: null, isOnline: true });
       }
+      await ride.save();
+
       emitRideUpdate(io, ride._id);
-      res.json({ message: 'Ride cancelled' });
+      res.json({ message: 'Ride cancelled', cancellationFee: ride.cancellationFee });
     } catch (err) {
       next(err);
     }
   });
 
-  // Mock payment - rider "pays" for a completed ride
+  // Payment - rider pays a completed ride or a cancellation fee
   router.post('/:id/pay', requireRole('rider'), async (req, res, next) => {
     try {
+      const method = req.body.method || 'UPI';
+      if (!PAYMENT_METHODS.includes(method)) {
+        return res.status(400).json({ message: `Method must be one of: ${PAYMENT_METHODS.join(', ')}` });
+      }
+
       const ride = await Ride.findById(req.params.id);
       if (!ride) return res.status(404).json({ message: 'Ride not found' });
       if (String(ride.rider) !== String(req.user.id)) {
         return res.status(403).json({ message: 'Not your ride' });
       }
-      if (ride.status !== 'completed') {
+      const isFeePayment =
+        ride.status === 'cancelled_by_rider' && ride.cancellationFee > 0;
+      if (ride.status !== 'completed' && !isFeePayment) {
         return res.status(400).json({ message: 'Ride is not completed yet' });
       }
       if (ride.payment.status === 'paid') {
         return res.json({ ride: await Ride.findById(ride._id).populate('driver', 'name').lean() });
       }
+      if (ride.payment.status === 'cash_pending') {
+        return res.json({ ride: await Ride.findById(ride._id).populate('driver', 'name').lean() });
+      }
 
-      ride.payment.status = 'paid';
-      ride.payment.method = req.body.method || 'UPI';
-      ride.payment.paidAt = new Date();
+      const amount = isFeePayment ? ride.cancellationFee : ride.fare;
+      ride.payment.method = method;
+      ride.payment.amount = amount;
+      if (method === 'Cash') {
+        // Cash is collected by the driver on delivery; the driver confirms it.
+        ride.payment.status = 'cash_pending';
+      } else {
+        // UPI / Card settle instantly (mock gateway).
+        ride.payment.status = 'paid';
+        ride.payment.paidAt = new Date();
+      }
       await ride.save();
 
       emitRideUpdate(io, ride._id);

@@ -18,7 +18,7 @@ const DESTINATIONS = [
 
 const PASSWORD = 'demo123';
 
-function buildRideData({ rider, driver, pickupIdx, dropIdx, daysAgo, paid = true, rated = true }) {
+function buildRideData({ rider, driver, pickupIdx, dropIdx, daysAgo, paid = true, rated = true, method = 'UPI' }) {
   const pickup = DESTINATIONS[pickupIdx];
   const drop = DESTINATIONS[dropIdx];
   const distanceKm = haversineKm(pickup, drop);
@@ -36,7 +36,12 @@ function buildRideData({ rider, driver, pickupIdx, dropIdx, daysAgo, paid = true
     fare: fare.total,
     fareBreakup: fare,
     status: 'completed',
-    payment: { status: paid ? 'paid' : 'pending', method: paid ? 'UPI' : '', paidAt: paid ? createdAt : null },
+    payment: {
+      status: paid ? 'paid' : 'pending',
+      method: paid ? method : '',
+      amount: fare.total,
+      paidAt: paid ? createdAt : null,
+    },
     riderRating: rated ? 5 : null,
     driverRating: rated ? 5 : null,
     requestedAt: createdAt,
@@ -115,18 +120,18 @@ async function seedDatabase() {
   });
 
   const rideSamples = [
-    { pickupIdx: 0, dropIdx: 4, daysAgo: 1, paid: true, rated: true },
-    { pickupIdx: 1, dropIdx: 5, daysAgo: 2, paid: true, rated: true },
-    { pickupIdx: 3, dropIdx: 0, daysAgo: 4, paid: true, rated: true },
-    { pickupIdx: 6, dropIdx: 2, daysAgo: 6, paid: true, rated: false },
-    { pickupIdx: 5, dropIdx: 7, daysAgo: 8, paid: false, rated: false },
+    { pickupIdx: 0, dropIdx: 4, daysAgo: 1, paid: true, rated: true, method: 'UPI' },
+    { pickupIdx: 1, dropIdx: 5, daysAgo: 2, paid: true, rated: true, method: 'Card' },
+    { pickupIdx: 3, dropIdx: 0, daysAgo: 4, paid: true, rated: true, method: 'Cash' },
+    { pickupIdx: 6, dropIdx: 2, daysAgo: 6, paid: true, rated: false, method: 'UPI' },
+    { pickupIdx: 5, dropIdx: 7, daysAgo: 8, paid: false, rated: false, method: 'UPI' },
   ];
 
   const rides = await Ride.insertMany(
     rideSamples.map((s) => buildRideData({ rider, driver: driver1, ...s }))
   );
 
-  const revenue = rides.reduce((sum, r) => sum + r.fare, 0);
+  const revenue = rides.reduce((sum, r) => sum + r.fareBreakup.driverEarnings, 0);
   await User.findByIdAndUpdate(driver1._id, { earnings: revenue, totalRides: rides.length });
 
   return { admin, rider, driver1, driver2, driver3, rides };

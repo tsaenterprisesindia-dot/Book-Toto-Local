@@ -192,7 +192,7 @@ export default function DriverHome() {
                 <div className="num" style={{ color: 'var(--brand-dark)' }}>
                   {formatINR(summary?.totals?.revenue || 0)}
                 </div>
-                <div className="lbl">Total earnings</div>
+                <div className="lbl">Net earnings (after commission)</div>
               </div>
               <div className="card stat">
                 <div className="num">{summary?.totals?.count || 0}</div>
@@ -271,8 +271,12 @@ export default function DriverHome() {
                 <b>{request.distanceKm} km · ~{request.durationMin} min</b>
               </div>
               <div className="spread" style={{ fontSize: 20, fontWeight: 800 }}>
-                <span>Fare</span>
+                <span>Rider pays</span>
                 <span style={{ color: 'var(--brand-dark)' }}>{formatINR(request.fare)}</span>
+              </div>
+              <div className="spread">
+                <span className="muted">You earn (after commission)</span>
+                <b>{formatINR(request.fareBreakup?.driverEarnings)}</b>
               </div>
               <div className="small muted">
                 Rider: {request.rider?.name} {request.rider?.phone ? `· ${request.rider.phone}` : ''}
