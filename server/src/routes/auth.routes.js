@@ -2,9 +2,16 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { signToken, requireAuth } from '../middleware/auth.js';
+import { createCaptcha, verifyCaptcha } from '../utils/captcha.js';
 
 export default function authRoutes() {
   const router = Router();
+
+  // Math captcha for the admin login (works offline in app + web).
+  router.get('/captcha', (_req, res) => {
+    const { id, question } = createCaptcha();
+    res.json({ captchaId: id, question });
+  });
 
   router.post('/register', async (req, res, next) => {
     try {
@@ -44,10 +51,17 @@ export default function authRoutes() {
 
   router.post('/login', async (req, res, next) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, captchaId, captchaAnswer } = req.body;
       const user = await User.findOne({ email: (email || '').toLowerCase() }).select('+password');
       if (!user || !(await bcrypt.compare(password || '', user.password))) {
         return res.status(401).json({ message: 'Invalid email or password' });
+      }
+      if (user.isHidden) {
+        return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+      }
+      // Admins must solve a captcha before signing in.
+      if (user.role === 'admin' && !verifyCaptcha(captchaId, captchaAnswer)) {
+        return res.status(400).json({ message: 'Invalid or expired captcha. Please try again.' });
       }
 
       const token = signToken(user);
@@ -66,6 +80,9 @@ export default function authRoutes() {
       }
       const user = await User.findOne({ email: (email || '').toLowerCase() });
       if (!user) return res.status(401).json({ message: 'No account for this email' });
+      if (user.isHidden) {
+        return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+      }
       if (user.role === 'admin') {
         return res.status(403).json({ message: 'Admin must log in with password' });
       }
@@ -96,6 +113,9 @@ export default function authRoutes() {
       const user = await User.findOne({ email: email.toLowerCase() });
       if (!user) {
         return res.status(404).json({ message: 'No account found with this email' });
+      }
+      if (user.isHidden) {
+        return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
       }
 
       const code = String(Math.floor(100000 + Math.random() * 900000));

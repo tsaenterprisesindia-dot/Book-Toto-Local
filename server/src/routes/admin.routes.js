@@ -16,7 +16,7 @@ export default function adminRoutes() {
           User.countDocuments({ role: 'rider' }),
           User.countDocuments({ role: 'driver' }),
           Ride.countDocuments(),
-          User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved' }),
+          User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved', isHidden: false }),
           Ride.aggregate([
             { $match: { status: 'completed' } },
             {
@@ -142,7 +142,7 @@ export default function adminRoutes() {
 
   router.patch('/drivers/:id', async (req, res, next) => {
     try {
-      const { action } = req.body; // approve | block | unblock
+      const { action } = req.body; // approve | block | unblock | hide | unhide
       const driver = await User.findById(req.params.id);
       if (!driver || driver.role !== 'driver') {
         return res.status(404).json({ message: 'Driver not found' });
@@ -150,9 +150,12 @@ export default function adminRoutes() {
       if (action === 'approve') driver.driverStatus = 'approved';
       else if (action === 'block') driver.driverStatus = 'blocked';
       else if (action === 'unblock') driver.driverStatus = 'approved';
+      else if (action === 'hide') driver.isHidden = true;
+      else if (action === 'unhide') driver.isHidden = false;
       else return res.status(400).json({ message: 'Unknown action' });
 
       if (driver.driverStatus !== 'approved') driver.isOnline = false;
+      if (driver.isHidden) driver.isOnline = false;
       await driver.save();
       res.json({ driver: driver.toSafeJSON() });
     } catch (err) {
@@ -166,6 +169,24 @@ export default function adminRoutes() {
         .select('-password -resetCode -resetExpires -faceDescriptor')
         .sort({ createdAt: -1 });
       res.json({ riders });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.patch('/riders/:id', async (req, res, next) => {
+    try {
+      const { action } = req.body; // hide | unhide
+      const rider = await User.findById(req.params.id);
+      if (!rider || rider.role !== 'rider') {
+        return res.status(404).json({ message: 'Rider not found' });
+      }
+      if (action === 'hide') rider.isHidden = true;
+      else if (action === 'unhide') rider.isHidden = false;
+      else return res.status(400).json({ message: 'Unknown action' });
+
+      await rider.save();
+      res.json({ rider: rider.toSafeJSON() });
     } catch (err) {
       next(err);
     }

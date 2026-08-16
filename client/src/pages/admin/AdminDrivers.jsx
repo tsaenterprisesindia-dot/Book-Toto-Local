@@ -20,7 +20,8 @@ export default function AdminDrivers() {
     try {
       await client.patch(`/admin/drivers/${id}`, { action });
       load();
-      setMsg(`Driver ${action === 'approve' ? 'approved' : action === 'block' ? 'blocked' : 'unblocked'}`);
+      const labels = { approve: 'approved', block: 'blocked', unblock: 'unblocked', hide: 'hidden', unhide: 'restored' };
+      setMsg(`Driver ${labels[action] || action}`);
     } catch (e) {
       setMsg(e.response?.data?.message || 'Update failed');
     } finally {
@@ -63,15 +64,25 @@ export default function AdminDrivers() {
                     <span className={`badge ${status === 'approved' ? 'badge-green' : status === 'pending' ? 'badge-amber' : 'badge-red'}`}>
                       {status}
                     </span>
+                    {d.isHidden && <span className="badge badge-gray">hidden</span>}
                   </td>
                   <td>
-                    <div className="row">
+                    <div className="row wrap">
+                      {d.isHidden ? (
+                        <button className="btn btn-ghost small" disabled={busyId === d._id} onClick={() => actOnDriver(d._id, 'unhide')}>
+                          Restore
+                        </button>
+                      ) : (
+                        <button className="btn btn-ghost small" disabled={busyId === d._id} onClick={() => actOnDriver(d._id, 'hide')}>
+                          Hide
+                        </button>
+                      )}
                       {status === 'pending' && (
                         <button className="btn btn-primary small" disabled={busyId === d._id} onClick={() => actOnDriver(d._id, 'approve')}>
                           Approve
                         </button>
                       )}
-                      {status === 'approved' && (
+                      {status === 'approved' && !d.isHidden && (
                         <button className="btn btn-danger small" disabled={busyId === d._id} onClick={() => actOnDriver(d._id, 'block')}>
                           Block
                         </button>

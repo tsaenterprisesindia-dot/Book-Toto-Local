@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema(
       default: 'pending',
     },
     isOnline: { type: Boolean, default: false },
+    // Hidden accounts are deactivated by an admin: they cannot log in, are
+    // excluded from ride dispatch and surge counts, but remain in the admin
+    // lists so they can be restored (unhide).
+    isHidden: { type: Boolean, default: false },
     location: {
       lat: { type: Number, default: null },
       lng: { type: Number, default: null },

@@ -20,6 +20,9 @@ export async function requireAuth(req, res, next) {
     if (!user) {
       return res.status(401).json({ message: 'Account no longer exists' });
     }
+    if (user.isHidden) {
+      return res.status(403).json({ message: 'This account has been deactivated. Contact the admin.' });
+    }
     req.userDoc = user;
     return next();
   } catch {

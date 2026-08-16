@@ -25,6 +25,7 @@ async function surgeContext() {
       role: 'driver',
       driverStatus: 'approved',
       isOnline: true,
+      isHidden: false,
       currentRide: null,
       'location.lat': { $ne: null },
     }),

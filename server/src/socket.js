@@ -66,6 +66,7 @@ export async function dispatchRideRequest(io, rideId) {
     role: 'driver',
     driverStatus: 'approved',
     isOnline: true,
+    isHidden: false,
     currentRide: null,
     'location.lat': { $ne: null },
   });
@@ -82,11 +83,13 @@ export async function dispatchRideRequest(io, rideId) {
 }
 
 export function setupSocket(io) {
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth?.token;
     if (!token) return next(new Error('Not authenticated'));
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET || 'super-toto-dev-secret');
+      const user = await User.findById(payload.id);
+      if (!user || user.isHidden) return next(new Error('Account deactivated'));
       socket.user = { id: payload.id, role: payload.role };
       return next();
     } catch {
