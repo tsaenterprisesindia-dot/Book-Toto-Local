@@ -163,6 +163,25 @@ input, select { font-family: inherit; }
 .input:focus { outline: none; border-color: var(--brand); }
 .input[readonly] { background: #f2f4f8; }
 
+.pw-wrap { position: relative; }
+.pw-wrap .input { padding-right: 42px; }
+.pw-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+}
+.pw-toggle:hover { color: var(--brand); background: var(--brand-light); }
+
 /* ---------- Buttons ---------- */
 .btn {
   border: none;

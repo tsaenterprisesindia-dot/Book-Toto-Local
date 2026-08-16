@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFace } from '../context/FaceProvider.jsx';
 import FaceCapture from '../components/FaceCapture.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import client from '../api/client.js';
 import logo from '../assets/book-toto-logo.png';
 
@@ -97,7 +98,7 @@ export default function Register() {
           </div>
           <div className="field">
             <label>Password</label>
-            <input className="input" type="password" value={form.password} onChange={set('password')} placeholder="min 6 characters" required />
+            <PasswordInput value={form.password} onChange={set('password')} placeholder="min 6 characters" required />
           </div>
 
           {role === 'driver' && (

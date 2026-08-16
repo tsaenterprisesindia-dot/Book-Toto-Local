@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import client from '../api/client.js';
+import PasswordInput from '../components/PasswordInput.jsx';
 import logo from '../assets/book-toto-logo.png';
 
 export default function ForgotPassword() {
@@ -105,23 +106,11 @@ export default function ForgotPassword() {
               </div>
               <div className="field">
                 <label>New password</label>
-                <input
-                  className="input"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="At least 6 characters"
-                />
+                <PasswordInput value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="At least 6 characters" />
               </div>
               <div className="field">
                 <label>Confirm new password</label>
-                <input
-                  className="input"
-                  type="password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="Repeat new password"
-                />
+                <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat new password" />
               </div>
               <button className="btn btn-primary btn-block btn-lg" disabled={!code || !newPassword || busy}>
                 {busy ? 'Resetting…' : 'Reset password'}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFace } from '../context/FaceProvider.jsx';
 import FaceCapture from '../components/FaceCapture.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import logo from '../assets/book-toto-logo.png';
 
 export default function Login() {
@@ -91,7 +92,7 @@ export default function Login() {
               </div>
               <div className="field">
                 <label>Password</label>
-                <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <PasswordInput value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
               </div>
               <button className="btn btn-primary btn-block btn-lg" disabled={busy}>
                 {busy ? 'Logging in…' : 'Log in'}
