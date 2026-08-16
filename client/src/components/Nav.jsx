@@ -1,5 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import logo from '../assets/book-toto-logo.png';
 
 export default function Nav() {
   const { user, logout } = useAuth();
@@ -15,7 +16,7 @@ export default function Nav() {
   return (
     <nav className="nav">
       <Link to={user ? home : '/'} className="brand">
-        <span className="toto">🛺</span>
+        <img src={logo} alt="Book Toto Local logo" className="brand-logo" />
         <span>
           <span className="brand-name">Book Toto Local</span>
           <span className="brand-unit">A Unit of TSA Enterprises</span>

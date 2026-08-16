@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import logo from '../assets/book-toto-logo.png';
 
 export default function Landing() {
   const { user } = useAuth();
@@ -8,8 +9,9 @@ export default function Landing() {
   return (
     <div className="landing">
       <div className="hero">
+        <img src={logo} alt="Book Toto Local logo" className="hero-logo" />
         <span className="chip chip-active" style={{ fontSize: 15, padding: '8px 16px' }}>
-          🛺 Your local toto, on demand
+          Your local toto, on demand
         </span>
         <h1>
           Book a <span className="accent">toto</span>,<br />

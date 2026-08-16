@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useFace } from '../context/FaceProvider.jsx';
 import FaceCapture from '../components/FaceCapture.jsx';
+import logo from '../assets/book-toto-logo.png';
 
 export default function Login() {
   const { login, faceLogin } = useAuth();
@@ -65,7 +66,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="card auth-card fade-in">
         <div className="auth-title">
-          <span>🛺</span> Book Toto Local
+          <img src={logo} alt="Book Toto Local logo" className="auth-logo" /> Book Toto Local
         </div>
         <p className="muted">Log in to continue</p>
 
