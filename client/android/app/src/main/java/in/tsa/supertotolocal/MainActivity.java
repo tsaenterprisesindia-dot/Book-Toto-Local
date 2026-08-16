@@ -1,4 +1,4 @@
-package in.tsa.booktotolocal;
+package in.tsa.supertotolocal;
 
 import com.getcapacitor.BridgeActivity;
 
