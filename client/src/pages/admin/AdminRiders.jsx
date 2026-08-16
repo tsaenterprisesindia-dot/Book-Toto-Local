@@ -4,6 +4,7 @@ import { timeAgo } from '../../utils/geo.js';
 
 export default function AdminRiders() {
   const [riders, setRiders] = useState([]);
+  const [filter, setFilter] = useState('all'); // all | active | hidden
   const [busyId, setBusyId] = useState(null);
   const [msg, setMsg] = useState('');
 
@@ -29,10 +30,26 @@ export default function AdminRiders() {
     }
   };
 
+  const filtered = riders.filter((r) =>
+    filter === 'hidden' ? r.isHidden : filter === 'active' ? !r.isHidden : true
+  );
+  const hiddenCount = riders.filter((r) => r.isHidden).length;
+
   return (
     <div className="fade-in">
-      <h2 style={{ marginTop: 0 }}>👤 Riders</h2>
+      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ marginTop: 0 }}>👤 Riders</h2>
+        <span className="small muted">{hiddenCount} hidden</span>
+      </div>
       {msg && <div className="alert alert-green mb">{msg}</div>}
+
+      <div className="tab-row" style={{ maxWidth: 360 }}>
+        {[['all', `All (${riders.length})`], ['active', `Active (${riders.length - hiddenCount})`], ['hidden', `Hidden (${hiddenCount})`]].map(([k, label]) => (
+          <button key={k} className={`tab${filter === k ? ' active' : ''}`} onClick={() => setFilter(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="card table-wrap">
         <table>
@@ -48,7 +65,7 @@ export default function AdminRiders() {
             </tr>
           </thead>
           <tbody>
-            {riders.map((r) => (
+            {filtered.map((r) => (
               <tr key={r._id}>
                 <td>{r.name}</td>
                 <td>{r.email}</td>
@@ -69,6 +86,11 @@ export default function AdminRiders() {
                 </td>
               </tr>
             ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="muted center">No riders in this view.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

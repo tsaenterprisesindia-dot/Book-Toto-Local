@@ -11,10 +11,12 @@ export default function adminRoutes() {
 
   router.get('/stats', async (_req, res, next) => {
     try {
-      const [riders, drivers, rides, online, completed, cancelled, methods, collected] =
+      const [riders, drivers, hiddenRiders, hiddenDrivers, rides, online, completed, cancelled, methods, collected] =
         await Promise.all([
           User.countDocuments({ role: 'rider' }),
           User.countDocuments({ role: 'driver' }),
+          User.countDocuments({ role: 'rider', isHidden: true }),
+          User.countDocuments({ role: 'driver', isHidden: true }),
           Ride.countDocuments(),
           User.countDocuments({ role: 'driver', isOnline: true, driverStatus: 'approved', isHidden: false }),
           Ride.aggregate([
@@ -96,6 +98,8 @@ export default function adminRoutes() {
         stats: {
           riders,
           drivers,
+          hiddenRiders,
+          hiddenDrivers,
           rides,
           ridesToday,
           online,

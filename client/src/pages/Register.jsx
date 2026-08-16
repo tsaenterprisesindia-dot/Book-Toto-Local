@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFace } from '../context/FaceProvider.jsx';
 import FaceCapture from '../components/FaceCapture.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
+import OtpInput from '../components/OtpInput.jsx';
+import OtpTimer from '../components/OtpTimer.jsx';
 import client from '../api/client.js';
 import logo from '../assets/super-toto-logo.png';
 
@@ -24,6 +26,8 @@ export default function Register() {
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [demoOtp, setDemoOtp] = useState('');
+  const [expiresAt, setExpiresAt] = useState(0);
+  const [expired, setExpired] = useState(false);
   const [otpBusy, setOtpBusy] = useState(false);
   const [err, setErr] = useState('');
   const [faceOpen, setFaceOpen] = useState(false);
@@ -51,6 +55,10 @@ export default function Register() {
       setErr('Verify your mobile number with the OTP first');
       return;
     }
+    if (expired) {
+      setErr('The OTP has expired. Please request a new one.');
+      return;
+    }
     try {
       const { user } = await register({ ...form, role, otp });
       // Auto-enroll a face for driver/rider so face login is usable right away.
@@ -74,6 +82,8 @@ export default function Register() {
       setOtpSent(true);
       setDemoOtp(data.demoOtp || '');
       setOtp('');
+      setExpiresAt(Date.now() + (data.expiresInMinutes || 5) * 60 * 1000);
+      setExpired(false);
     } catch (e) {
       setErr(e.response?.data?.message || 'Could not send OTP');
     } finally {
@@ -143,13 +153,15 @@ export default function Register() {
                   setOtpSent(false);
                   setDemoOtp('');
                   setOtp('');
+                  setExpiresAt(0);
+                  setExpired(false);
                 }}
                 placeholder="+91 9xxxx xxxxx"
                 required
                 inputMode="numeric"
               />
               <button type="button" className="btn btn-ghost" onClick={sendCode} disabled={otpBusy || !form.phone}>
-                {otpBusy ? 'Sending…' : 'Send OTP'}
+                {otpBusy ? 'Sending…' : otpSent ? 'Resend' : 'Send OTP'}
               </button>
             </div>
             <div className="small muted">Used to log in. We'll verify it with a one-time password.</div>
@@ -159,19 +171,15 @@ export default function Register() {
             <div className="field">
               {demoOtp && (
                 <div className="alert alert-info mb">
-                  <b>Demo SMS:</b> your OTP is <b>{demoOtp}</b> (valid 5 minutes). In production this would be
-                  sent to your phone.
+                  <b>Demo SMS:</b> your OTP is <b>{demoOtp}</b>. In production this would be sent to your phone.
                 </div>
               )}
-              <label>One-time password</label>
-              <input
-                className="input"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="6-digit OTP"
-                inputMode="numeric"
-                required
-              />
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <label style={{ marginBottom: 0 }}>One-time password</label>
+                {expired ? <span className="otp-expired">OTP expired</span> : <OtpTimer expiresAt={expiresAt} onExpire={() => setExpired(true)} />}
+              </div>
+              <OtpInput value={otp} onChange={setOtp} length={6} disabled={expired} />
+              {expired && <div className="small muted mt">The OTP has expired. Tap Resend to get a new code.</div>}
             </div>
           )}
           <div className="field">

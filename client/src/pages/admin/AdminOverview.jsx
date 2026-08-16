@@ -29,6 +29,14 @@ export default function AdminOverview() {
           <div className="lbl">Drivers registered</div>
         </div>
         <div className="card stat">
+          <div className="num" style={{ color: 'var(--danger)' }}>{stats.hiddenRiders}</div>
+          <div className="lbl">Hidden riders</div>
+        </div>
+        <div className="card stat">
+          <div className="num" style={{ color: 'var(--danger)' }}>{stats.hiddenDrivers}</div>
+          <div className="lbl">Hidden drivers</div>
+        </div>
+        <div className="card stat">
           <div className="num">{stats.online}</div>
           <div className="lbl">Drivers online</div>
         </div>

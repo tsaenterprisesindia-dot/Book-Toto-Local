@@ -3,6 +3,7 @@ import client from '../../api/client.js';
 
 export default function AdminDrivers() {
   const [drivers, setDrivers] = useState([]);
+  const [filter, setFilter] = useState('all'); // all | active | hidden
   const [busyId, setBusyId] = useState(null);
   const [msg, setMsg] = useState('');
 
@@ -29,10 +30,26 @@ export default function AdminDrivers() {
     }
   };
 
+  const filtered = drivers.filter((d) =>
+    filter === 'hidden' ? d.isHidden : filter === 'active' ? !d.isHidden : true
+  );
+  const hiddenCount = drivers.filter((d) => d.isHidden).length;
+
   return (
     <div className="fade-in">
-      <h2 style={{ marginTop: 0 }}>🛺 Drivers</h2>
+      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <h2 style={{ marginTop: 0 }}>🛺 Drivers</h2>
+        <span className="small muted">{hiddenCount} hidden</span>
+      </div>
       {msg && <div className="alert alert-green mb">{msg}</div>}
+
+      <div className="tab-row" style={{ maxWidth: 360 }}>
+        {[['all', `All (${drivers.length})`], ['active', `Active (${drivers.length - hiddenCount})`], ['hidden', `Hidden (${hiddenCount})`]].map(([k, label]) => (
+          <button key={k} className={`tab${filter === k ? ' active' : ''}`} onClick={() => setFilter(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="card table-wrap">
         <table>
@@ -48,7 +65,7 @@ export default function AdminDrivers() {
             </tr>
           </thead>
           <tbody>
-            {drivers.map((d) => {
+            {filtered.map((d) => {
               const status = d.driverStatus;
               return (
                 <tr key={d._id}>
@@ -97,6 +114,11 @@ export default function AdminDrivers() {
                 </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="muted center">No drivers in this view.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

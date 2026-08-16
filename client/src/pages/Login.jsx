@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import client from '../api/client.js';
 import PasswordInput from '../components/PasswordInput.jsx';
+import OtpInput from '../components/OtpInput.jsx';
+import OtpTimer from '../components/OtpTimer.jsx';
 import logo from '../assets/super-toto-logo.png';
 
 const ROLES = [
@@ -22,6 +24,8 @@ export default function Login() {
   const [otpPhone, setOtpPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [demoOtp, setDemoOtp] = useState('');
+  const [expiresAt, setExpiresAt] = useState(0);
+  const [expired, setExpired] = useState(false);
   const [captcha, setCaptcha] = useState(null); // { captchaId, question }
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState('');
@@ -73,6 +77,8 @@ export default function Login() {
       const data = await sendOtp(otpPhone, 'login');
       setDemoOtp(data.demoOtp || '');
       setOtp('');
+      setExpiresAt(Date.now() + (data.expiresInMinutes || 5) * 60 * 1000);
+      setExpired(false);
     } catch (err) {
       setError(err.response?.data?.message || 'Could not send OTP');
     } finally {
@@ -175,40 +181,43 @@ export default function Login() {
                 <input
                   className="input"
                   value={otpPhone}
-                  onChange={(e) => setOtpPhone(e.target.value)}
+                  onChange={(e) => {
+                    setOtpPhone(e.target.value);
+                    setExpiresAt(0);
+                    setExpired(false);
+                    setDemoOtp('');
+                    setOtp('');
+                  }}
                   placeholder="+91 9xxxx xxxxx"
                   inputMode="tel"
                 />
                 <button type="button" className="btn btn-ghost" onClick={requestOtp} disabled={otpBusy || !otpPhone}>
-                  {otpBusy ? 'Sending…' : 'Send OTP'}
+                  {otpBusy ? 'Sending…' : otpPhone && (expiresAt || demoOtp) ? 'Resend' : 'Send OTP'}
                 </button>
               </div>
             </div>
 
             {demoOtp && (
               <div className="alert alert-info mb">
-                <b>Demo SMS:</b> your OTP is <b>{demoOtp}</b> (valid 5 minutes). In production this would be
-                sent to your phone.
+                <b>Demo SMS:</b> your OTP is <b>{demoOtp}</b>. In production this would be sent to your phone.
               </div>
             )}
 
-            {otpPhone && (
+            {expiresAt > 0 && (
               <div className="field">
-                <label>One-time password</label>
-                <input
-                  className="input"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="6-digit OTP"
-                  inputMode="numeric"
-                />
+                <div className="row" style={{ justifyContent: 'space-between' }}>
+                  <label style={{ marginBottom: 0 }}>One-time password</label>
+                  {expired ? <span className="otp-expired">OTP expired</span> : <OtpTimer expiresAt={expiresAt} onExpire={() => setExpired(true)} />}
+                </div>
+                <OtpInput value={otp} onChange={setOtp} length={6} disabled={expired} />
+                {expired && <div className="small muted mt">The OTP has expired. Tap Resend to get a new code.</div>}
               </div>
             )}
 
             {role === 'admin' ? (
               <div className="alert alert-warn mb">Admins can't use OTP login — sign in with password and the security check.</div>
             ) : (
-              <button className="btn btn-primary btn-block btn-lg" disabled={busy || !otp}>
+              <button className="btn btn-primary btn-block btn-lg" disabled={busy || !otp || expired || otp.length < 6}>
                 {busy ? 'Verifying…' : 'Log in with OTP'}
               </button>
             )}

@@ -484,5 +484,26 @@ tr:hover td { background: #fafbfd; }
   color: var(--ink);
 }
 
+/* ---------- OTP input + timer ---------- */
+.otp-row { display: flex; gap: 8px; justify-content: space-between; }
+.otp-box {
+  flex: 1;
+  min-width: 0;
+  aspect-ratio: 0.85;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+}
+.otp-box:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.otp-box:disabled { opacity: 0.55; }
+.otp-timer { font-weight: 700; font-size: 13px; color: var(--brand-dark); font-variant-numeric: tabular-nums; }
+.otp-timer.warn { color: var(--danger); }
+.otp-expired { font-weight: 700; font-size: 13px; color: var(--danger); }
+
+
 
 
